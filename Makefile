@@ -34,10 +34,13 @@ endif
 install: tls-scan
 	mkdir -p $(PREFIX)/bin
 	cp $< $(PREFIX)/bin/tls-scan
+	mkdir -p $(PREFIX)/etc/tls-scan
+	cp $< $(PREFIX)/etc/tls-scan/ca-bundle.crt
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(PREFIX)/bin/tls-scan
+	rm -f $(PREFIX)/etc/tls-scan/ca-bundle.crt
 
 .PHONY: clean
 clean:

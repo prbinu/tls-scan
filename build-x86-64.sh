@@ -89,7 +89,6 @@ if [ "${OS}" == "Darwin" ]; then
   ./configure --enable-shared=no --enable-static CFLAGS="-I${OUTDIR}/include -arch x86_64" LIBS="-L${OUTDIR}/lib -lssl -L${OUTDIR}/lib -lcrypto -ldl -L${OUTDIR}/lib -lz"
 else
   ./configure --enable-shared=no OPENSSL_CFLAGS=-I${OUTDIR}/include OPENSSL_LIBS="-L${OUTDIR}/lib -lssl -L${OUTDIR}/lib -lcrypto"  CFLAGS="-I${OUTDIR}/include" LIBS="-L${OUTDIR}/lib -ldl -lz"
-
 fi
 
 make
