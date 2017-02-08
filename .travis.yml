@@ -6,9 +6,11 @@ addons:
 
 os:
   - linux
+  - osx
 
 compiler:
   - gcc
+  - clang
 
 script:
   - ./build-x86-64.sh
