@@ -19,7 +19,7 @@ CFLAGS= -I./include -I ${TS_DEPDIR}/include -Wall -Wundef -Wshadow -Wunreachable
 
 LDFLAGS = -L ${TS_DEPDIR}/lib -L ${TS_DEPDIR}/lib -lssl -L ${TS_DEPDIR}/lib -lcrypto -L ${TS_DEPDIR}/lib -levent -L ${TS_DEPDIR}/lib -levent_openssl -ldl $(libdep_$(shell uname -s))
 
-libdep_Linux =
+libdep_Linux = -L ${TS_DEPDIR}/lib -lz -lrt
 libdep_Darwin = -lz 
 
 tls-scan: $(obj)
