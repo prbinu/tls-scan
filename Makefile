@@ -1,25 +1,44 @@
 
-ifndef TS_DEP_PATH
-    $(info Env variable TS_DEP_PATH [root dir for openssl and libevent] is not defined; setting it to '../')
-    TS_DEP_PATH=..
+ifndef TS_DEPDIR
+  $(info ----------------------------------)
+  $(warning Env variable TS_DEPDIR [install path of openssl and libevent] is not defined; setting it to '../')
+  $(warning Refer: https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh)
+  TS_DEPDIR=..
+  $(warning TS_DEPDIR path set to: ${TS_DEPDIR})
+  $(info ----------------------------------)
+
 endif
 
-$(info ${TS_DEP_PATH} is undefined)
+$(info TS_DEPDIR path: ${TS_DEPDIR})
+
+src = $(wildcard *.c)
+obj = $(src:.c=.o)
 
 CC = gcc
-CFLAGS= -I./include -I ${TS_DEP_PATH}/include -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEP_PATH}/lib -D_GNU_SOURCE
+CFLAGS= -I./include -I ${TS_DEPDIR}/include -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEPDIR}/lib -D_GNU_SOURCE
 
-tls-scanner: common.o cert-parser.o proto-adapters.o main.o
-	$(CC) $(CFLAGS) -o tls-scan common.o cert-parser.o proto-adapters.o main.o -L ${TS_DEP_PATH}/lib -L ${TS_DEP_PATH}/lib -lssl -L ${TS_DEP_PATH}/lib -lcrypto -L ${TS_DEP_PATH}/lib -levent -L ${TS_DEP_PATH}/lib -levent_openssl -ldl
+LDFLAGS = -L ${TS_DEPDIR}/lib -L ${TS_DEPDIR}/lib -lssl -L ${TS_DEPDIR}/lib -lcrypto -L ${TS_DEPDIR}/lib -levent -L ${TS_DEPDIR}/lib -levent_openssl -ldl $(libdep_$(shell uname -s))
 
-main.o: main.c
+libdep_Linux =
+libdep_Darwin = -lz 
 
-proto-adapters.o: proto-adapters.c
+tls-scan: $(obj)
+	$(CC) -o $@ $^ $(LDFLAGS)
 
-certparse.o: cert-parser.c
 
-common.o: common.c
+ifndef PREFIX
+  PREFIX = ./
+endif
 
+.PHONY: install
+install: tls-scan
+	mkdir -p $(PREFIX)/bin
+	cp $< $(PREFIX)/bin/tls-scan
+
+.PHONY: uninstall
+uninstall:
+	rm -f $(PREFIX)/bin/tls-scan
+
+.PHONY: clean
 clean:
-	rm tls-scan *.o
-
+	rm -f $(obj) tls-scan

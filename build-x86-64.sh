@@ -14,8 +14,13 @@ fi
 
 [[ -z "${TS_BUILDDIR}" ]] && BUILDDIR="${CD}" || BUILDDIR="${TS_BUILDDIR}"
 
+
 echo ">>> Build DIR: ${BUILDDIR}"
 BUILDDIR=${BUILDDIR}/ts-build-root
+
+# remove build dirs
+test -d ${BUILDDIR}/build && rm -rf ${BUILDDIR}/build/*
+
 
 test -z ${BUILDDIR} || /bin/mkdir -p ${BUILDDIR}
 test -z ${BUILDDIR}/downloads || /bin/mkdir -p ${BUILDDIR}/downloads
@@ -27,7 +32,7 @@ echo ">>> Install DIR: ${OUTDIR}"
 export PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig
 
 OPENSSL_VERSION="1.0.2-chacha"
-LIBEVENT_VERSION="release-2.1.7-rc"
+LIBEVENT_VERSION="2.1.8-stable"
 ZLIB_VERSION="zlib-1.2.11"
 
 FILE="${BUILDDIR}/downloads/${OPENSSL_VERSION}.zip"
@@ -66,22 +71,22 @@ fi
 make
 make install prefix=${OUTDIR}
 
-FILE="${BUILDDIR}/downloads/${LIBEVENT_VERSION}.tar.gz"
+FILE="${BUILDDIR}/downloads/libevent-${LIBEVENT_VERSION}.tar.gz"
 if [ ! -f $FILE ]; then
   echo "Downloading $FILE.."
   cd ${BUILDDIR}/downloads
-  curl -OL https://github.com/libevent/libevent/archive/${LIBEVENT_VERSION}.tar.gz
+  curl -OL https://github.com/libevent/libevent/releases/download/release-${LIBEVENT_VERSION}/libevent-${LIBEVENT_VERSION}.tar.gz
 fi
 
 cd ${BUILDDIR}/build
-tar -zxvf ${BUILDDIR}/downloads/${LIBEVENT_VERSION}.tar.gz
+tar -zxvf ${BUILDDIR}/downloads/libevent-${LIBEVENT_VERSION}.tar.gz
 mv libevent-${LIBEVENT_VERSION} libevent-x86_64
 
 cd libevent-x86_64
 ./autogen.sh
 
 if [ "${OS}" == "Darwin" ]; then
-  ./configure --enable-shared=no --enable-static CFLAGS="-I${OUTDIR}/include -arch x86_64" LIBS="-L${OUTDIR}/lib -lssl -lcrypto -ldl -lz"
+  ./configure --enable-shared=no --enable-static CFLAGS="-I${OUTDIR}/include -arch x86_64" LIBS="-L${OUTDIR}/lib -lssl -L${OUTDIR}/lib -lcrypto -ldl -L${OUTDIR}/lib -lz"
 else
   ./configure --enable-shared=no OPENSSL_CFLAGS=-I${OUTDIR}/include OPENSSL_LIBS="-L${OUTDIR}/lib -lssl -L${OUTDIR}/lib -lcrypto"  CFLAGS="-I${OUTDIR}/include" LIBS="-L${OUTDIR}/lib -ldl -lz"
 
@@ -90,5 +95,20 @@ fi
 
 make
 make install prefix=${OUTDIR}
+
+FILE="${BUILDDIR}/downloads/master.zip"
+if [ ! -f $FILE ]; then
+  echo "Downloading $FILE.."
+  cd ${BUILDDIR}/downloads
+  curl -OL https://github.com/prbinu/tls-scan/archive/master.zip
+fi
+
+cd ${BUILDDIR}/build
+unzip ${BUILDDIR}/downloads/master.zip
+cd tls-scan-master
+export TS_DEPDIR=${OUTDIR}
+make
+export PREFIX=${OUTDIR}
+make install
 echo '>>> Complete'
 
