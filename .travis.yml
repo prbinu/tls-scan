@@ -1,0 +1,15 @@
+language:
+  - c
+
+addons:
+    apt_packages:
+
+os:
+  - linux
+
+compiler:
+  - gcc
+
+script:
+  - ./build-x86-64.sh
+
