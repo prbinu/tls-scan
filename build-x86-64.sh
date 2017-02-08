@@ -14,7 +14,6 @@ fi
 
 [[ -z "${TS_BUILDDIR}" ]] && BUILDDIR="${CD}" || BUILDDIR="${TS_BUILDDIR}"
 
-
 echo ">>> Build DIR: ${BUILDDIR}"
 BUILDDIR=${BUILDDIR}/ts-build-root
 
