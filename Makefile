@@ -9,7 +9,13 @@ ifndef TS_DEPDIR
 
 endif
 
+ifndef PREFIX
+  PREFIX=/usr/local
+
+endif
+
 $(info TS_DEPDIR path: ${TS_DEPDIR})
+$(info PREFIX (install) path: ${PREFIX})
 
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
@@ -26,21 +32,22 @@ tls-scan: $(obj)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 
-ifndef PREFIX
-  PREFIX = ./
-endif
-
 .PHONY: install
 install: tls-scan
 	mkdir -p $(PREFIX)/bin
 	cp $< $(PREFIX)/bin/tls-scan
 	mkdir -p $(PREFIX)/etc/tls-scan
 	cp ca-bundle.crt $(PREFIX)/etc/tls-scan/ca-bundle.crt
+	mkdir -p $(PREFIX)/man/man1
+	cp man/tls-scan $(PREFIX)/man/man1/tls-scan.1
+	gzip $(PREFIX)/man/man1/tls-scan.1
 
 .PHONY: uninstall
 uninstall:
 	rm -f $(PREFIX)/bin/tls-scan
 	rm -f $(PREFIX)/etc/tls-scan/ca-bundle.crt
+	rmdir $(PREFIX)/etc/tls-scan
+	rm -f $(PREFIX)/man/man1/tls-scan.1.gz
 
 .PHONY: clean
 clean:

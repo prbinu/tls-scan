@@ -1,0 +1,144 @@
+.\" Manpage for tls-scan.
+.TH man 1 "08 Feb 2017" "1.0" "tls-scan man page"
+.SH NAME
+tls-scan \- A fast TLS scanner
+.SH SYNOPSIS
+tls-scan [OPTION]..
+.SH DESCRIPTION
+A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format. 
+
+tls-scan is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
+
+The program is designed to support adding new protocols (starttls) easily without disturbing the existing structure. 
+
+For more information, please visit:
+       https://github.com/prbinu/tls-scan
+
+.SH OPTIONS
+
+-H  --help
+              Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
+
+-h  --host=<arg>
+              Name of the host to scan. By passing an additional flag '--ip', the host value will be intepreted as an IP address.
+
+-p  --port=<arg> [default: 443]
+              Destination TCP port.
+
+-P  --starttls=<smtp|mysql>
+              Specify the starttls protocol. Current options: smtp and mysql. If the flag is not provided, program will choose the protocol based on the given port. Port 443, 465, 993 and 995 defaults to 'tls'. Port 25 and 587 uses starttls 'smtp' by default. Port 3306 use 'msql' SSL.
+
+-c  --cacert=<file>
+              Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
+
+-C  --ciphers=<arg>
+              Ciphers to use; try 'openssl ciphers' to see all ciphers. Note that this option will be overwritten by --ssl2, --ssl3, --tls1 --tls1_1, --tls1_2 options, if provided.
+              
+              Example: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"
+
+-e  --cipher-enum
+              Enumerate supported ciphers. Currently use --tls-old ciphers. Try --meta-info to find predefined cipher suite options.
+
+-V  --version-enum
+              Enumerate supported TLS versions.
+
+-r  --session-reuse
+              Enable ssl session reuse.
+
+-u  --session-print
+              Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to --session-file to test session reuse.
+
+-T  --session-file=<file>
+              File that contains SSL session in PEM format.
+
+-a  --all
+              Shortcut for --version-enum, --cipher-enum and --session-reuse options. This scan can take longer time to complete. Also note if the server employs some form of rate-limiting, your scan may fail.
+
+-s  --sni=<host> [default: hostname]
+              Set TLS extension servername in ClientHello. Defaults to input hostname and applied to TLSv1+ only.
+
+-b  --concurrency=<number> [default: 1]
+              Number of concurrent requests. The default is 1. This option specify the number of worker objects. Concurrency should be set based on your system capacity (memory, cpu, network) etc.
+
+-t  --timeout=<number> [default: 10]
+              Timeout per connection (in seconds). Note that is is per connection and for cipher scans, tls-scan makes several connections to the same server.
+
+-S  --sleep=<number> [default: 0]
+              Add milliseconds delay between the connection. Only for '--cipher-enum' and '--version-enum' options. Useful to manage server rate-limits.
+
+-f  --infile=<file>
+              Input file with domains or IPs. This is optional and by default the program accepts input from standard input (stdin).
+
+-o  --outfile=<file>
+              Output file where the result in JSON format is stored. The default is standard output (stdout).
+
+-n  --pretty
+              Pretty print; add newline ('\\n') between record fields.
+
+-i  --ip
+              Treat input as IP address. The default is hostname.
+
+-N  --nameserver=<ip>
+              DNS resolver IPs to use and is an optional field. Multiple Namespace IP address can be passed. Format: -N <ip1> -N <ip2> -N <ip3>.. In practice, DNS servers may have tight rate-limit in place.
+
+    --ssl2
+              Use only SSLv2 ciphers.
+
+    --ssl3
+              Use only SSLv3 ciphers.
+
+    --tls1
+              Use only TLSv1 ciphers.
+
+    --tls1_1
+              Use only TLSv1_1 ciphers.
+
+    --tls1_2
+              Use only TLSv1_2 ciphers.
+
+    --tls-modern
+              Mozilla's modern cipher list. See: https://wiki.mozilla.org/Security/Server_Side_TLS.
+
+    --tls-interm
+              Mozilla's intermediate cipher list.
+
+    --tls-old
+              Mozilla's old (backward compatible cipher list).
+
+    --no-parallel-enum
+              Disable parallel cipher and tls version enumeration. Parallel scan is performed only with '--host' option.
+
+    --meta-info
+              Print program meta information and exit. Useful if you wanted to see predefined cipher options.
+
+.SH EXAMPLES
+
+% tls-scan --host=<host-name> --pretty
+
+% tls-scan --host=<host-name> --all 2> /dev/null
+
+% tls-scan --host=<host-name>  --port=587 --starttls=smtp  --cacert=/usr/local/etc/tls-scan/ca-bundle.crt 2> /dev/null
+
+% tls-scan --infile=domains.txt --cacert=./cert.pem 2> /dev/null
+
+% cat domains.txt | tls-scan --port=443 --ssl3 --cacert=./cert.pem 2> /dev/null
+
+% tls-scan --host=<host-name> --session-print 2> /dev/null
+
+.SH SEE ALSO
+
+.SH BUGS
+
+Reporting Bugs:
+    https://github.com/prbinu/tls-scan/issues/new
+
+Known Bugs:
+    1. Fail to print certificate information for SSLv2 handshake.
+
+.SH AUTHOR
+Binu Ramakrishnan, Yahoo Inc.
+
+.SH COPYRIGHT
+Copyright 2016-2017 Yahoo Inc.
+
+BSD-3 License: https://github.com/prbinu/tls-scan/blob/master/LICENSE.txt
