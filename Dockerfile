@@ -16,5 +16,6 @@ ENV TS_INSTALLDIR /usr/local
 ADD ./build-x86-64.sh build-x86-64.sh
 RUN ./build-x86-64.sh
 
-CMD tls-scan ${ARGS}
+ENTRYPOINT ["tls-scan"]
+CMD ["--help"]
 
