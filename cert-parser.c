@@ -7,6 +7,7 @@
 #include <openssl/x509v3.h>
 #include <openssl/x509_vfy.h>
 #include <openssl/asn1.h>
+#include <openssl/ocsp.h>
 #include <string.h>
 #include <cert-parser.h>
 
@@ -43,7 +44,7 @@ static BIO *get_cname(X509_NAME *name)
     BIO_free(bio);
     return NULL;
   }
- 
+
   if (BIO_flush(bio)) {}
 
   return bio;
@@ -293,6 +294,33 @@ static const char *get_ssl_version_str(int index)
   }
 }
 
+static bool verify_ocsp(SSL *ssl, OCSP_RESPONSE *ocsp_resp,
+                                                  STACK_OF(X509) *cert_stack)
+{
+  bool ret = false;
+  OCSP_BASICRESP *bresp = NULL;
+  int st = -1;
+
+  bresp = OCSP_response_get1_basic(ocsp_resp);
+  if (!bresp) {
+    return false;
+  }
+
+  X509_STORE *x509_store = SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl));
+  assert(x509_store != NULL);
+
+  st = OCSP_basic_verify(bresp, cert_stack, x509_store, 0);
+  if (st <= 0) {
+    //ERR_print_errors_fp(stderr);
+    ret = false;
+  } else {
+    ret = true;
+  }
+
+  OCSP_BASICRESP_free(bresp);
+  return ret;
+}
+
 void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert,
                                                       FILE * fp, bool pretty)
 {
@@ -346,13 +374,21 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert,
   snprintf(tls_cert->verify_cert_errmsg, sizeof(tls_cert->verify_cert_errmsg),
                                     "%s", X509_verify_cert_error_string(res));
 
-  unsigned char *resp;
-  long ocsp = SSL_get_tlsext_status_ocsp_resp(ssl, &resp);
+  const unsigned char *resp;
+  long ocsp_len = SSL_get_tlsext_status_ocsp_resp(ssl, &resp);
 
-  if (ocsp == -1) {
+  if (ocsp_len == -1) {
     tls_cert->ocsp_stapling_response = false;
   } else {
     tls_cert->ocsp_stapling_response = true;
+
+    OCSP_RESPONSE *ocsp_resp = d2i_OCSP_RESPONSE(NULL, &resp, ocsp_len);
+    if (ocsp_resp) {
+      tls_cert->verify_ocsp_basic = verify_ocsp(ssl, ocsp_resp, cert_stack);
+      OCSP_RESPONSE_free(ocsp_resp);
+    } else {
+      tls_cert->verify_ocsp_basic = false;
+    }
   }
 
   for (i = 0; i < tls_cert->x509_chain_depth; i++) {
@@ -610,18 +646,23 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
                                               tls_cert->x509_chain_depth, fmt);
 
   if (tls_cert->verify_cert) {
-    fprintf(fp, "%.*s\"verifyCert\": true,%c", FMT_INDENT(2), fmt);
+    fprintf(fp, "%.*s\"verifyCertResult\": true,%c", FMT_INDENT(2), fmt);
   } else {
-    fprintf(fp, "%.*s\"verifyCert\": false,%c", FMT_INDENT(2), fmt);
+    fprintf(fp, "%.*s\"verifyCertResult\": false,%c", FMT_INDENT(2), fmt);
     fprintf(fp, "%.*s\"verifyCertError\": \"%s\",%c",
                               FMT_INDENT(2), tls_cert->verify_cert_errmsg, fmt);
   }
 
-  fprintf(fp, "%.*s\"verifyHost\": %s,%c",
+  fprintf(fp, "%.*s\"verifyHostResult\": %s,%c",
                         FMT_INDENT(2), bool_to_str(tls_cert->verify_host), fmt);
 
   fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
                            bool_to_str(tls_cert->ocsp_stapling_response), fmt);
+
+  if (tls_cert->ocsp_stapling_response) {
+    fprintf(fp, "%.*s\"verifyOcspResult\": %s,%c", FMT_INDENT(2),
+                           bool_to_str(tls_cert->verify_ocsp_basic), fmt);
+  }
 
   if (tls_cert->x509_chain_depth > 0) {
     fprintf(fp, "%.*s\"certificateChain\": [%c", FMT_INDENT(2), fmt);

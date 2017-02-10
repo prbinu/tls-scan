@@ -237,6 +237,8 @@ void ts_ssl_destroy(SSL_CTX * ssl_ctx)
   ERR_remove_thread_state(NULL);
   EVP_cleanup();
   CRYPTO_cleanup_all_ex_data();
+  //sk_SSL_COMP_free(SSL_COMP_get_compression_methods());
+  SSL_COMP_free_compression_methods();
 }
 
 /* Initializes client object */
@@ -1360,11 +1362,11 @@ int main(int argc, char **argv)
 
   size_t i = 0;
   for (i = 0; i < op.batch_size; i++) {
-    op.cert_obj_pool[i] = (struct tls_cert*)malloc(sizeof(struct tls_cert));
+    op.cert_obj_pool[i] = (struct tls_cert*)calloc(1, sizeof(struct tls_cert));
     op.cert_obj_pool[i]->cipher_suite_support  = NULL;
     if (op.cipher_enum_count > 0) {
       op.cert_obj_pool[i]->cipher_suite_support =
-                           (bool*)calloc(sizeof(bool), op.cipher_enum_count);
+                           (bool*)calloc(op.cipher_enum_count, sizeof(bool));
     }
   }
 

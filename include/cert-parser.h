@@ -55,6 +55,7 @@ struct tls_cert {
   unsigned long session_lifetime_hint;
   bool session_reuse_supported;
   bool ocsp_stapling_response;
+  bool verify_ocsp_basic;
   int x509_chain_depth;
   bool verify_cert;
   char verify_cert_errmsg[TS_ERRMSG_LEN];
