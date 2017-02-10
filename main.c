@@ -144,7 +144,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
   } else if (cli->op->ssl2) {
 
     if (!SSL_set_ssl_method(ssl, SSLv2_client_method())) {
-      fprintf(stderr, "%s %d %s\n", 
+      fprintf(stderr, "%s %d %s\n",
                                 "SSL_set_ssl_method (SSL2) failed, skiping...",
                                                    cli->tls_ver_index, cipher);
     }
@@ -531,7 +531,6 @@ void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
                                                                 client_t *cli)
 {
   cli->event_error = TS_HSHAKE_ERR;
-  bool err_processed = false;
 
   if (events & BEV_EVENT_ERROR) {
     int err;
@@ -540,44 +539,38 @@ void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
       fprintf(stderr, "host: %s; ip: %s; error: DNS; errormsg: %s\n",
                                cli->host, cli->ip, evutil_gai_strerror(err));
       stats.dns_errcount++;
-    } else {
-      stats.network_err_count++;
-      // An error occured while connecting.
-      fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: %s\n",
-      cli->host, cli->ip, evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
+      return;
     }
-
-    err_processed = true;
-  } //else
+  }
 
   if (events & BEV_EVENT_EOF) {
     stats.remote_close_count++;
     fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: \
                      Disconnected from the remote host\n", cli->host, cli->ip);
-    err_processed = true;
-  } //else
 
-  if (events & BEV_EVENT_TIMEOUT) {
+  } else if (events & BEV_EVENT_TIMEOUT) {
     cli->event_error = TS_TIMEOUT;
     stats.timeout_count++;
-    //set_linger(bufferevent_getfd(cli->bev), 1, 0);
     fprintf(stderr, "host: %s; ip: %s; error: Timeout\n", cli->host, cli->ip);
-    err_processed = true;
-  } //else
-    if (events & BEV_EVENT_READING) {
+
+  } else if (events & BEV_EVENT_READING) {
     stats.network_err_count++;
+
+    scan_type_t t = ts_scan_type(cli);
+
+    // it is expected to fail version and cipher enumeration requests
+    // so skip printing msgs to error console for those requests
+    if ((ST_TLS_VERSION != t) && (ST_CIPHER != t)) {
     fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: \
                      Error encountered while reading\n", cli->host, cli->ip);
-    err_processed = true;
-  } //else
-  if (events & BEV_EVENT_WRITING) {
+    }
+
+  } else if (events & BEV_EVENT_WRITING) {
     stats.network_err_count++;
     fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: \
                      Error encountered while writing\n", cli->host, cli->ip);
-    err_processed = true;
-  }
 
-  if (!err_processed) {
+  } else {
     stats.error_count++;
     fprintf(stderr, "host: %s; ip: %s; error: Unknown; errormsg: %s\n",
     cli->host, cli->ip, evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
@@ -615,18 +608,17 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
 
       if (cli->op->session_in_fp) {
         if (SSL_session_reused(bufferevent_openssl_get_ssl(bev))) {
-          fprintf(stderr, "REUSED SESSION\n");
           cli->session_reuse_supported = true;
           cli->tls_cert->session_reuse_supported = true;
         } else {
-          fprintf(stderr, "NEW SESSION\n");
+          //fprintf(stderr, "NEW SESSION\n");
         }
       }
 
       break;
 
     case ST_SESSION_REUSE:
-      // Was the stored session reused? 
+      // Was the stored session reused?
       if (SSL_session_reused(bufferevent_openssl_get_ssl(bev))) {
         printf("REUSED SESSION\n");
         cli->session_reuse_supported = true;
@@ -767,7 +759,8 @@ void ts_scan_tcp_connect_hostname(client_t * cli)
                                             AF_UNSPEC, cli->host, cli->port);
 
   if (ret != 0) {
-    fprintf(stderr, "Could not connect to the remote host: %s\n", cli->host);
+    fprintf(stderr, "host: %s; ip: %s; error: Failed to connect remote host\n",
+                                                           cli->host, cli->ip);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -793,7 +786,8 @@ void ts_scan_tcp_connect(client_t * cli)
 
   ret = bufferevent_socket_connect(cli->bev, &out, outlen);
   if (ret != 0) {
-    fprintf(stderr, "Could not connect to the remote ip: %s\n", cli->ip);
+    fprintf(stderr, "host: ; ip: %s; error: Failed to connect remote ip\n",
+                                                                      cli->ip);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -837,7 +831,8 @@ void ts_scan_tls_connect_hostname(client_t * cli)
                                             AF_UNSPEC, cli->host, cli->port);
 
   if (ret != 0) {
-    fprintf(stderr, "Could not connect to the remote host: %s\n", cli->host);
+    fprintf(stderr, "host: %s; ip: %s; error: Failed to connect remote host\n",
+                                                           cli->host, cli->ip);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -861,19 +856,21 @@ void ts_scan_tls_connect(client_t * cli)
                                      BEV_OPT_DEFER_CALLBACKS |
                                      BEV_OPT_CLOSE_ON_FREE);
   assert(cli->bev != NULL);
-  bufferevent_setcb(cli->bev, tls_rw_dummy_cb, tls_rw_dummy_cb, ts_scan_tls_connect_cb, cli);
+  bufferevent_setcb(cli->bev, tls_rw_dummy_cb, tls_rw_dummy_cb,
+                                                  ts_scan_tls_connect_cb, cli);
 
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
 
   int outlen = sizeof(out);
-  char ip_port[DEFAULT_HOSTLEN];
-  snprintf(ip_port, 2*OPT_STRLEN, "%s:%d", cli->ip, cli->port);
+  char ip_port[DEFAULT_HOSTLEN+8];
+  snprintf(ip_port, DEFAULT_HOSTLEN+8, "%s:%d", cli->ip, cli->port);
   evutil_parse_sockaddr_port(ip_port, &out, &outlen);
 
   ret = bufferevent_socket_connect(cli->bev, &out, outlen);
   if (ret != 0) {
-    fprintf(stderr, "ip: %s; error: Could not connect to the remote ip\n", cli->ip);
+    fprintf(stderr, "host: ; ip: %s; error: Failed to connect remote ip\n",
+                                                                      cli->ip);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -1350,7 +1347,6 @@ int main(int argc, char **argv)
       if (op.cipher_enum_count >= CIPHER_ENUM_SZ) {
         break;
       }
-
     }
 
     //fprintf(stderr, "%d, %d\n", i, op.cipher_enum_count);
@@ -1413,11 +1409,14 @@ int main(int argc, char **argv)
                                                 getpid(), stats.tls_handshake);
     fprintf(stderr, " [%d] gross_tls_handshake : %d\n",
                                           getpid(), stats.gross_tls_handshake);
+
     if (stats.starttls_no_support_count) {
       fprintf(stderr, " [%d] starttls_no_support_count : %d\n",
                                     getpid(), stats.starttls_no_support_count);
     }
-    fprintf(stderr, " [%d] elapsed_time        : %ld.%ld secs\n",  getpid(),  et/1000000, et%1000000);
+
+    fprintf(stderr, " [%d] elapsed_time        : %llu.%llu secs\n",
+                                            getpid(),  et/1000000, et%1000000);
     fprintf(stderr, "---------------------------------\n");
   } else {
     fprintf(stderr, "[%d] dnscount: %d |", pid, stats.dnscount);
@@ -1433,7 +1432,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "starttls_no_support_count: %d |",
                                               stats.starttls_no_support_count);
     }
-    fprintf(stderr, "elapsed_time: %ld.%ld secs\n", et/1000000, et%1000000);
+    fprintf(stderr, "elapsed_time: %llu.%llu secs\n", et/1000000, et%1000000);
   }
 
   if (stats.timeout_count == stats.dnscount) {
@@ -1448,4 +1447,3 @@ int main(int argc, char **argv)
 
   return 0;
 }
-

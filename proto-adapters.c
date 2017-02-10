@@ -305,7 +305,6 @@ void on_mysql_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
   index = index + strlen((char*)&rbuf[index]+1);
 
   if (0x0008 & (int16_t)(rbuf[index+3])) {
-    //fprintf(stderr, "SSL Supported\n");
     ts_scan_tcp_write(cli, ssl_handshake_response,
                                        sizeof(ssl_handshake_response));
     ts_scan_do_tls_handshake(cli);

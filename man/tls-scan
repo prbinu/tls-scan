@@ -5,11 +5,11 @@ tls-scan \- A fast TLS scanner
 .SH SYNOPSIS
 tls-scan [OPTION]..
 .SH DESCRIPTION
-A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format. 
+A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format.
 
 tls-scan is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
 
-The program is designed to support adding new protocols (starttls) easily without disturbing the existing structure. 
+The program is designed to support adding new protocols (starttls) easily without disturbing the existing structure.
 
 For more information, please visit:
        https://github.com/prbinu/tls-scan
@@ -33,7 +33,7 @@ For more information, please visit:
 
 -C  --ciphers=<arg>
               Ciphers to use; try 'openssl ciphers' to see all ciphers. Note that this option will be overwritten by --ssl2, --ssl3, --tls1 --tls1_1, --tls1_2 options, if provided.
-              
+
               Example: "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"
 
 -e  --cipher-enum
@@ -64,7 +64,7 @@ For more information, please visit:
               Timeout per connection (in seconds). Note that is is per connection and for cipher scans, tls-scan makes several connections to the same server.
 
 -S  --sleep=<number> [default: 0]
-              Add milliseconds delay between the connection. Only for '--cipher-enum' and '--version-enum' options. Useful to manage server rate-limits.
+              Add milliseconds delay between the connection. Only for '--cipher-enum' and '--version-enum' options. Useful to manage server rate-limits. The max sleep value is 60000 (1 minute)
 
 -f  --infile=<file>
               Input file with domains or IPs. This is optional and by default the program accepts input from standard input (stdin).
