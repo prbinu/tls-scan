@@ -3,25 +3,27 @@
 
 # tls-scan
 
-A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format. tls-scan is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
+A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format. `tls-scan` is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
 
 `tls-scan` helps developers and security engineers to track/test/debug certificates and TLS configurations of servers within their organization.
 
 ## Features
 
 * Extract x509 certificate from the server and print it in JSON format
+* Certificate and host name verification checks
 * Cipher and TLS version enumeration
+* TLS compression checks
 * Session reuse tests
-* Stapled OCSP response verification
-* Can operate at scale with the ability to concurrently scan large number of servers 
+* Certificate revocation checks with stapled OCSP response 
 * Support TLS, SMTP STARTTLS and MYSQL protocols
+* Can operate at scale with the ability to concurrently scan large number of servers
 * Can be easily combined with other tools to analyze the scan results
 
 This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations. 
 
 ## Installation
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked staticlally to tls-scan program. The build can take approximately five minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
 *Pre-requisites*:
   * [autoconf](https://ftpmirror.gnu.org/autoconf)
@@ -138,3 +140,38 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 }
 
 ```
+## Usage
+
+The scan output can be shoved into tools like [Splunk](http://www.splunk.com/) or [ELK](http://elastic.co/) for analysis.
+
+###Command-line Query & Filter
+
+By passing `tls-scan` output to JSON command-line parser like [`jq`](https://stedolan.github.io/jq), you can do realtime filtering on the scan results.
+
+**Examples**:
+
+*Command to filter out hosts that passed certificate and host name verifications*:
+```sh
+cat input.txt | tls-scan --port=443  2>/dev/null | \
+jq-linux64 -r 'select(.verifyHostResult == true and .verifyCertResult == true) | [.host, .ip, .verifyHost, .verifyCert] | @tsv'
+```
+
+*Command to find hosts with expired certificates*: 
+```sh
+cat input.txt | tls-scan --port=443 --concurrency=500 --timeout=5 2>/dev/null | \
+jq-linux64 -r  'select(.certificateChain[].expired == true) | [.host, .ip] | @tsv'
+ ```
+
+*Command to find weak RSA keys*:
+```sh
+cat tlscerts.out | \
+jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certificateChain[0].publicKeySize < 2048) | [.host, .ip]'
+```
+
+*Command to find hosts that support SSLv2 or SSLv3*:
+ ```sh
+tls-scan --infile=domains.txt --port=443 --version-enum --concurrency=250 --timeout=3 2>/dev/null | \
+jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .tlsVersions[]] else empty end | @tsv'
+ ```
+
+**NOTE**: Avoid frequent scan + filter; instead save the scan output to a file and use it to run queries.
