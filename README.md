@@ -154,7 +154,7 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 
 The scan output can be shoved into tools like [Splunk](http://www.splunk.com/) or [ELK](http://elastic.co/) for analysis.
 
-###Command-line Query & Filter
+### Command-line Query & Filter
 
 By passing `tls-scan` output to JSON command-line parser like [`jq`](https://stedolan.github.io/jq), you can do realtime filtering on the scan results.
 
@@ -189,6 +189,7 @@ jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certifica
  ```sh
 tls-scan --infile=domains.txt --port=443 --version-enum --concurrency=250 --timeout=3 2>/dev/null | \
 jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .tlsVersions[]] else empty end | @tsv'
+
  ```
 
 **NOTE**: Avoid frequent scan + filter; instead save the scan output to a file and use it to run queries.
@@ -229,5 +230,6 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 --no-parallel-enum |Disable parallel cipher and tls version enumeration. Parallel scan is performed only with '--host' option.
 --meta-info | Print program meta information and exit. Useful if you wanted to see predefined cipher options.
 
-###Contributions
+
+### Contributions
 Collaborators and pull requests are welcome!
