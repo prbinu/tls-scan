@@ -25,7 +25,7 @@ This tool is primarly for collecting data. The scan output can be easily combine
 
 All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
-*Pre-requisites*:
+*Build Pre-requisites*:
   * [autoconf](https://ftpmirror.gnu.org/autoconf)
   * [automake](https://ftpmirror.gnu.org/automake)
   * [libtool](http://ftpmirror.gnu.org/libtool)
@@ -192,11 +192,11 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 -u  --session-print | Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to `--session-file` to test session reuse.
 -T  --session-file=\<file\> | File that contains SSL session in PEM format.
 -a  --all | Shortcut for `--version-enum`, `--cipher-enum` and `--session-reuse` options. This scan can take longer time to complete. Also note if the server employs some form of rate-limiting, your scan may fail.
--s  --sni=\<host\> | [default: hostname] Set TLS extension servername in `ClientHello`. Defaults to input hostname and applied to TLSv1+ only.
+-s  --sni=\<host\> | Set TLS extension servername in `ClientHello`. Defaults to input hostname and applied to TLSv1+ only.
 -b  --concurrency=\<number\> | Number of concurrent requests. The default is 1. This option specify the number of worker objects. Concurrency should be set based on your system capacity (memory, cpu, network) etc. Default: 1.
 -t  --timeout=\<number\> | Timeout per connection (in seconds). Note that is is per connection and for cipher scans, `tls-sca` makes several connections to the same server. Default: 10.
 -S  --sleep=\<number\> | Add milliseconds delay between the connection. Only for `--cipher-enum` and `--version-enum` options. Useful to manage server rate-limits. The max sleep value is 60000 (1 minute). Default: 0.
--f  --infile=<\file\> | Input file with domains or IPs. This is optional and by default the program accepts input from standard input (`stdin`).
+-f  --infile=\<file\> | Input file with domains or IPs. This is optional and by default the program accepts input from standard input (`stdin`).
 -o  --outfile=\<file\> | Output file where the result in JSON format is stored. The default is standard output (`stdout`).
 -n  --pretty | Pretty print; add newline (`\n`) between record fields.
 -i  --ip | Treat input as IP address. The default is hostname.
