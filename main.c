@@ -114,7 +114,6 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
             ERR_error_string(ERR_get_error(), NULL));
   }
 
-  //printf("=====>>>>>>>>>>>  %d\t%d\n", cli->cipher_index, cli->tls_ver_index);
   const char *cipher = cli->op->ciphers;
   if (cli->cipher_index >= 0) {
     cipher = cli->op->cipher_enum_list[cli->cipher_index];
@@ -125,7 +124,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 
     cipher = old_ciphers; // default_ciphers;  // default cipher list is too long
     if (!SSL_set_ssl_method(ssl, SSLv23_client_method())) {
-      fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skiping...",
+      fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skipping..",
                                                    cli->tls_ver_index, cipher);
     }
 
@@ -137,7 +136,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
     // TODO set cipher to ciphers based on tls version
     cipher = default_ciphers;
     if (!SSL_set_ssl_method(ssl, ts_tls_get_method(cli->tls_ver_index))) {
-     fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skiping...",
+     fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skipping..",
                                                    cli->tls_ver_index, cipher);
     }
 
@@ -145,14 +144,14 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 
     if (!SSL_set_ssl_method(ssl, SSLv2_client_method())) {
       fprintf(stderr, "%s %d %s\n",
-                                "SSL_set_ssl_method (SSL2) failed, skiping...",
+                                "SSL_set_ssl_method (SSL2) failed, skipping..",
                                                    cli->tls_ver_index, cipher);
     }
 
   } else {
 
     if (!SSL_set_ssl_method(ssl, SSLv23_client_method())) {
-      fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skiping...",
+      fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skipping..",
                                                    cli->tls_ver_index, cipher);
     }
 
@@ -173,7 +172,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 
     // https://www.openssl.org/docs/man1.0.2/ssl/SSL_set_cipher_list.html
   if (!SSL_set_cipher_list(ssl, cipher)) {
-    fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, exiting...",
+    fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, skipping..",
                                                     cli->cipher_index, cipher);
     SSL_free(ssl);
     return NULL;
@@ -205,7 +204,7 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
   }
 
   if (!SSL_CTX_set_cipher_list(ssl_ctx, ciphers)) {
-    fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting...");
+    fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
     exit(EXIT_FAILURE);
   }
 
@@ -622,11 +621,10 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
     case ST_SESSION_REUSE:
       // Was the stored session reused?
       if (SSL_session_reused(bufferevent_openssl_get_ssl(bev))) {
-        printf("REUSED SESSION\n");
         cli->session_reuse_supported = true;
         cli->tls_cert->session_reuse_supported = true;
       } else {
-        printf("NEW SESSION\n");
+        //printf("NEW SESSION\n");
       }
 
       break;
