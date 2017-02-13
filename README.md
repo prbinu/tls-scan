@@ -40,6 +40,7 @@ All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/mast
 ```sh
 % ./build-x86-64.sh
 ```
+
 The newly built tls-scan binary can be found at `./ts-build-root/bin`
 
 *Test* :
@@ -70,17 +71,19 @@ The tls-scan binary can be found at `./ts-build-root/bin`. Another (easy) option
 *Build* :
 Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile) to your machine, and run it:
 
-```
+```sh
 % docker build -t tls-scan .
 ```
+
 *Test* :
-```
+
+```sh
 % docker run tls-scan --host=yahoo.com --port=443 --cacert=/usr/local/etc/tls-scan/ca-bundle.crt --pretty
 ```
 
 ## Example
 
-```
+```sh
 % ./tls-scan --host=search.yahoo.com --port=443 --all --pretty
 ```
 
@@ -158,9 +161,11 @@ By passing `tls-scan` output to JSON command-line parser like [`jq`](https://ste
 **Examples**:
 
 *Command to filter out hosts that passed certificate and host name verifications*:
+
 ```sh
 cat input.txt | tls-scan --port=443  2>/dev/null | \
 jq-linux64 -r 'select(.verifyHostResult == true and .verifyCertResult == true) | [.host, .ip, .verifyHost, .verifyCert] | @tsv'
+
 ```
 
 *Command to find hosts with expired certificates* :
@@ -168,13 +173,15 @@ jq-linux64 -r 'select(.verifyHostResult == true and .verifyCertResult == true) |
 ```sh
 cat input.txt | tls-scan --port=443 --concurrency=500 --timeout=5 2>/dev/null | \
 jq-linux64 -r  'select(.certificateChain[].expired == true) | [.host, .ip] | @tsv'
- ```
+
+```
 
 *Command to find weak RSA keys* :
 
 ```sh
 cat tlscerts.out | \
 jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certificateChain[0].publicKeySize < 2048) | [.host, .ip]'
+
 ```
 
 *Command to find hosts that support SSLv2 or SSLv3* :
