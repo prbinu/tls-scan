@@ -186,7 +186,7 @@ jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certifica
 
 *Command to find hosts that support SSLv2 or SSLv3* :
 
- ```sh
+```sh
 tls-scan --infile=domains.txt --port=443 --version-enum --concurrency=250 --timeout=3 2>/dev/null | \
 jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .tlsVersions[]] else empty end | @tsv'
 
