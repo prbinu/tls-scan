@@ -25,49 +25,55 @@ This tool is primarly for collecting data. The scan output can be easily combine
 
 All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
-*Build Pre-requisites*:
-  * [autoconf](https://ftpmirror.gnu.org/autoconf)
-  * [automake](https://ftpmirror.gnu.org/automake)
-  * [libtool](http://ftpmirror.gnu.org/libtool)
-  * [pkg-config](https://pkg-config.freedesktop.org/releases/?C=M;O=D)
-  * [gcc](http://railsapps.github.io/xcode-command-line-tools.html)
+*Build Pre-requisites* :
+
+* [autoconf](https://ftpmirror.gnu.org/autoconf)
+* [automake](https://ftpmirror.gnu.org/automake)
+* [libtool](http://ftpmirror.gnu.org/libtool)
+* [pkg-config](https://pkg-config.freedesktop.org/releases/?C=M;O=D)
+* [gcc](http://railsapps.github.io/xcode-command-line-tools.html)
 
 ### Linux
 
-*Build*: 
-```
+*Build* :
+
+```sh
 % ./build-x86-64.sh
 ```
 The newly built tls-scan binary can be found at `./ts-build-root/bin`
 
-*Test*:
-```
+*Test* :
+
+```sh
 % cd ts-build-root/bin
 % ./tls-scan --host=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
 ```
 
 ### OSX
 If you do not have the pre-requisite packages, you can easily install those packages by following the links below:
-  * [xcode-command-line-tools](http://railsapps.github.io/xcode-command-line-tools.html)
-  * [how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source](http://superuser.com/questions/383580/how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source)
+
+* [xcode-command-line-tools](http://railsapps.github.io/xcode-command-line-tools.html)
+* [how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source](http://superuser.com/questions/383580/how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source)
   
-*Build*: 
-```
+*Build* :
+
+```sh
 % ./build-x86-64.sh
 ```
+
 The tls-scan binary can be found at `./ts-build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
 
 ### Docker
 
-*Pre-requisite*: [Docker](https://docs.docker.com/engine/installation/)
+*Pre-requisite* : [Docker](https://docs.docker.com/engine/installation/)
 
-*Build*:
+*Build* :
 Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile) to your machine, and run it:
 
 ```
 % docker build -t tls-scan .
 ```
-*Test*:
+*Test* :
 ```
 % docker run tls-scan --host=yahoo.com --port=443 --cacert=/usr/local/etc/tls-scan/ca-bundle.crt --pretty
 ```
@@ -140,6 +146,7 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 }
 
 ```
+
 ## Usage
 
 The scan output can be shoved into tools like [Splunk](http://www.splunk.com/) or [ELK](http://elastic.co/) for analysis.
@@ -156,19 +163,22 @@ cat input.txt | tls-scan --port=443  2>/dev/null | \
 jq-linux64 -r 'select(.verifyHostResult == true and .verifyCertResult == true) | [.host, .ip, .verifyHost, .verifyCert] | @tsv'
 ```
 
-*Command to find hosts with expired certificates*: 
+*Command to find hosts with expired certificates* :
+
 ```sh
 cat input.txt | tls-scan --port=443 --concurrency=500 --timeout=5 2>/dev/null | \
 jq-linux64 -r  'select(.certificateChain[].expired == true) | [.host, .ip] | @tsv'
  ```
 
-*Command to find weak RSA keys*:
+*Command to find weak RSA keys* :
+
 ```sh
 cat tlscerts.out | \
 jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certificateChain[0].publicKeySize < 2048) | [.host, .ip]'
 ```
 
-*Command to find hosts that support SSLv2 or SSLv3*:
+*Command to find hosts that support SSLv2 or SSLv3* :
+
  ```sh
 tls-scan --infile=domains.txt --port=443 --version-enum --concurrency=250 --timeout=3 2>/dev/null | \
 jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .tlsVersions[]] else empty end | @tsv'
