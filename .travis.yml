@@ -10,7 +10,7 @@ compiler:
 script:
 - ./build-x86-64.sh
 before_deploy:
-- mkdir -p $TRAVIS_BUILD_DIR/tls-scan-$TRAVIS_OS_NAME/man/man1
+- mkdir -p $TRAVIS_BUILD_DIR/tls-scan/man/man1
 - cp $TRAVIS_BUILD_DIR/ts-build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan/tls-scan
 - cp $TRAVIS_BUILD_DIR/ts-build-root/man/man1/tls-scan.1 $TRAVIS_BUILD_DIR/tls-scan/man/man1/tls-scan.1
 - cp $TRAVIS_BUILD_DIR/ts-build-root/etc/tls-scan/ca-bundle.crt $TRAVIS_BUILD_DIR/tls-scan/ca-bundle.crt
