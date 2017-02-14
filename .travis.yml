@@ -9,12 +9,17 @@ compiler:
 - gcc
 script:
 - ./build-x86-64.sh
-before_deploy: "cp $TRAVIS_BUILD_DIR/ts-build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan-$TRAVIS_OS_NAME"
+before_deploy:
+- mkdir -p $TRAVIS_BUILD_DIR/tls-scan-$TRAVIS_OS_NAME/man/man1
+- cp $TRAVIS_BUILD_DIR/ts-build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan/tls-scan
+- cp $TRAVIS_BUILD_DIR/ts-build-root/man/man1/tls-scan.1 $TRAVIS_BUILD_DIR/tls-scan/man/man1/tls-scan.1
+- cp $TRAVIS_BUILD_DIR/ts-build-root/etc/tls-scan/ca-bundle.crt $TRAVIS_BUILD_DIR/tls-scan/ca-bundle.crt
+- tar -zcvf tls-scan-${TRAVIS_OS_NAME}.tar.gz $TRAVIS_BUILD_DIR/tls-scan/
 deploy:
   provider: releases
   api_key:
     secure: oSOG0ZrfgPAmuNlhvQWchS/rZDrAUOdTcZVEGxYW0danCRewz6/AbzB/iWSXrXaf6Ocu9eVbwzjImjkX1e+oFFepXk3AoTmHOxHb6DRD1BOr8ZySEFFNelAnnUIx/eMI0u2BIjjcQnW/XeBAMej1yQC7liHWcClGTolTZSUBZmzSdIo2QaPPA2knjlJ/olkGk3z2f+MnoiC4aRSeDE9c4GXNziFSP5rA3VJjCKEWfE2mludcUgHauf7tjzjcJgd57dB2Z4GAcOW81r2DUsHNwrLEC9Yk3YUA9hhdOhbFEkfB6l7OMqW8cq9ev1NLdcFccra5ZieOgwnjEXTu8sVeNOxuYiCa3h2yyEfGqoOJB8xrgTKJkb+ViQApIVbcywN+5CTdz0bYDJbHt4vydiTapfnbsbFSK0dOyZBpDXA1Ad+N8XQuPYxuDAyi9Hjagb+bytA9+KgAkpHZqxmrrNjmvGbxc7UmmEzPNrbhFhgcqgB5Vbqn2gNbkA99PIc8aIzKnunTx78gbyns/adxuUNz7z5ymCU3LMZWV4e9marnfKQY27mXpkDdjdKRO1nnNNG9tziTP0RgUVyN7qd/BVgCP+COPtQfSGpV7ZyvprXLWD6fSQjqub/AqAkDDo1Rh/ob5nz40cIKfjVAK26ELRLySo5bJYGBcRotTGgWCwFVRZA=
-  file: "tls-scan-$TRAVIS_OS_NAME"
+  file: "tls-scan-$TRAVIS_OS_NAME.tar.gz"
   skip_cleanup: true
   on:
     repo: prbinu/tls-scan
