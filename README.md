@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/prbinu/tls-scan.svg?branch=master)](https://travis-ci.org/prbinu/tls-scan)
-
+[![GitHub license](https://img.shields.io/badge/license-BSD 3-blue.svg)](https://raw.githubusercontent.com/prbinu/tls-scan/master/LICENSE.txt)
+[![Release](https://img.shields.io/badge/Release-0.1.4-blue.svg)](https://github.com/prbinu/tls-scan/releases/latest)
 
 # tls-scan
 
@@ -22,6 +23,14 @@ A program to scan TLS based servers and collect x509 certificates, ciphers and r
 This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations. 
 
 ## Installation
+
+You may either use pre-built binary package or build from the source.
+
+### Pre-built Binary
+
+Linux and OSX: https://github.com/prbinu/tls-scan/releases/latest
+
+### Build from source
 
 All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
@@ -190,7 +199,7 @@ jq-linux64 -r  'select(.certificateChain[0].publicKeyAlg == "RSA" and .certifica
 tls-scan --infile=domains.txt --port=443 --version-enum --concurrency=250 --timeout=3 2>/dev/null | \
 jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .tlsVersions[]] else empty end | @tsv'
 
- ```
+```
 
 **NOTE**: Avoid frequent scan + filter; instead save the scan output to a file and use it to run queries.
 
