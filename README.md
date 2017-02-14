@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/prbinu/tls-scan.svg?branch=master)](https://travis-ci.org/prbinu/tls-scan)
 [![GitHub license](https://img.shields.io/badge/license-BSD 3-blue.svg)](https://raw.githubusercontent.com/prbinu/tls-scan/master/LICENSE.txt)
-[![Release](https://img.shields.io/badge/Release-0.1.4-blue.svg)](https://github.com/prbinu/tls-scan/releases/latest)
+[![Release](https://img.shields.io/badge/Release-0.1.4-blue.svg?label=release)](https://github.com/prbinu/tls-scan/releases/latest)
 
 # tls-scan
 
@@ -28,9 +28,9 @@ You may either use pre-built binary package or build from the source.
 
 ### Pre-built Binary
 
-Linux and OSX: https://github.com/prbinu/tls-scan/releases/latest
+Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://github.com/prbinu/tls-scan/releases/latest)
 
-### Build from source
+### Build From Source
 
 All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
