@@ -1,6 +1,8 @@
 [![Build Status](https://travis-ci.org/prbinu/tls-scan.svg?branch=master)](https://travis-ci.org/prbinu/tls-scan)
 [![GitHub license](https://img.shields.io/badge/license-BSD 3-blue.svg)](https://raw.githubusercontent.com/prbinu/tls-scan/master/LICENSE.txt)
-[![Release](https://img.shields.io/badge/Release-0.1.4-blue.svg?label=release)](https://github.com/prbinu/tls-scan/releases/latest)
+[![Release](https://img.shields.io/badge/release-0.1.6-blue.svg?label=release)](https://github.com/prbinu/tls-scan/releases/latest)
+
+[![Twitter URL](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)]()
 
 # tls-scan
 
