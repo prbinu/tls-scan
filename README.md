@@ -15,12 +15,12 @@ A program to scan TLS based servers and collect x509 certificates, ciphers and r
 * Cipher and TLS version enumeration
 * TLS compression checks
 * Session reuse tests
-* Certificate revocation checks with stapled OCSP response 
+* Certificate revocation checks with stapled OCSP response
 * Support TLS, SMTP STARTTLS and MYSQL protocols
 * Can operate at scale with the ability to concurrently scan large number of servers
 * Can be easily combined with other tools to analyze the scan results
 
-This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations. 
+This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
 ## Installation
 
@@ -32,7 +32,7 @@ Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://gith
 
 ### Build From Source
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
 
 *Build Pre-requisites* :
 
@@ -64,7 +64,7 @@ If you do not have the pre-requisite packages, you can easily install those pack
 
 * [xcode-command-line-tools](http://railsapps.github.io/xcode-command-line-tools.html)
 * [how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source](http://superuser.com/questions/383580/how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source)
-  
+
 *Build* :
 
 ```sh
@@ -109,8 +109,8 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
   "expansion": "NONE",
   "sessionLifetimeHint": 100800,
   "tlsVersions": [
-    "TLSv1", 
-    "TLSv1_1", 
+    "TLSv1",
+    "TLSv1_1",
     "TLSv1_2"
   ],
   "x509ChainDepth": 2,

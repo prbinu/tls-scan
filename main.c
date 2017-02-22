@@ -1017,7 +1017,8 @@ void print_usage()
   printf("  %s\n", "-u  --session-print      Print SSL session in PEM format to stderr");
   printf("  %s\n", "-T  --session-file=<file>");
   printf("  %s\n", "                         Pass file that contains SSL session in PEM format");
-  printf("  %s\n", "-a  --all                Enable all fields (--version-enum, --cipher-enum)");
+  printf("  %s\n", "-a  --all                Enable all fields (--version-enum, --cipher-enum,");
+  printf("  %s\n", "                         --session-reuse)");
   printf("  %s\n", "-s  --sni=<host>         Set TLS extension servername in ClientHello");
   printf("  %s\n", "                         Defaults to input hostname & Applied to TLSv1+ only");
   printf("  %s\n", "-b  --concurrency=<number>");
@@ -1180,6 +1181,7 @@ int main(int argc, char **argv)
     case 'a':
       op.cipher_enum = true;
       op.tls_vers_enum = true;
+      op.session_reuse_test = true;
       break;
     case 's':
       snprintf(op.sni, DEFAULT_HOSTLEN, "%s", optarg);
