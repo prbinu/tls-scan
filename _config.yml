@@ -1,4 +1,5 @@
 theme: jekyll-theme-cayman
 show_downloads: true
+releases_url: https://github.com/prbinu/tls-scan/releases/latest
 gems:
   - jekyll-sitemap
