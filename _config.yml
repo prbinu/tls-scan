@@ -1,6 +1,4 @@
 theme: jekyll-theme-cayman
+show_downloads: true
 gems:
   - jekyll-sitemap
-webrick:
-  headers:
-    Download: https://github.com/prbinu/tls-scan/releases/latest
