@@ -212,7 +212,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
 -e  --cipher-enum | Enumerate supported ciphers. Currently use `--tls-old` ciphers. Try `--meta-info` to find predefined cipher suite options.
-    --show-unsupported-ciphers | Include unsupported ciphers in the cipher list to JSON output.
+--show-unsupported-ciphers | Include unsupported ciphers in the cipher list to JSON output.
 -V  --version-enum | Enumerate supported TLS versions.
 -r  --session-reuse | Enable ssl session reuse.
 -u  --session-print | Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to `--session-file` to test session reuse.
@@ -242,7 +242,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 * The openssl fork we use doesn't support new CHACHA ciphers (yet). Here is the tracking issue: https://github.com/PeterMosmans/openssl/issues/38
 * The following ciphers are currently disabled: ```SRP:PSK:RC2:DES-CBC3-MD5:RC4-64-MD5:DES-CBC-MD5:IDEA```
-* Instead of escaping JSON special chars (eg. double quotes), we are removing those charactors from the string.
+* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the string.
 
 ## Contributions
 Collaborators and pull requests are welcome!
