@@ -1447,7 +1447,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d) |", op.cipher_enum_count);
-    fprintf(stderr, "dns-lookup: %d |", pid, stats.dnscount);
+    fprintf(stderr, "dns-lookup: %d |", stats.dnscount);
     fprintf(stderr, "network-error: %d |", stats.network_err_count);
     fprintf(stderr, "dns-errcount: %d |", stats.dns_errcount);
     fprintf(stderr, "remote-close-error: %d |", stats.remote_close_count);
