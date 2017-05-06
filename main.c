@@ -1012,6 +1012,8 @@ void print_usage()
   printf("  %s\n", "                         --tls1_1, --tls1_2 options (if provided)");
   printf("  %s\n", "                         https://www.openssl.org/docs/man1.0.1/apps/ciphers.html");
   printf("  %s\n", "-e  --cipher-enum        Enumerate supported ciphers");
+  printf("  %s\n", "    --show-unsupported-ciphers");
+  printf("  %s\n", "                         Show ciphers that are not supported in cipher list");
   printf("  %s\n", "-V  --version-enum       Enumerate supported TLS versions");
   printf("  %s\n", "-r  --session-reuse      Enable ssl session reuse");
   printf("  %s\n", "-u  --session-print      Print SSL session in PEM format to stderr");
@@ -1083,6 +1085,7 @@ int main(int argc, char **argv)
     {"cacert", required_argument, 0, 'c'},
     {"ciphers", required_argument, 0, 'C'},
     {"cipher-enum", no_argument, 0, 'e'},
+    {"show-unsupported-ciphers", no_argument, 0, 'U'},
     {"session-reuse", no_argument, 0, 'r'},
     {"session-print", no_argument, 0, 'u'},
     {"session-file", required_argument, 0, 'T'},
@@ -1125,6 +1128,7 @@ int main(int argc, char **argv)
   op.ip_input = false;
   op.cipher_enum = false;
   op.cipher_enum_count = 0;
+  op.show_unsupported_ciphers = false;
   op.tls_vers_enum = false;
   op.no_parallel_enum = false;
   op.batch_size = 1;
@@ -1142,7 +1146,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eruT:as:b:v:t:S:o:N:23456789VXnOijMH",
+                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:23456789VXnOijMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1168,6 +1172,9 @@ int main(int argc, char **argv)
       break;
     case 'e':
       op.cipher_enum = true;
+      break;
+    case 'U':
+      op.show_unsupported_ciphers = true;
       break;
     case 'r':
       op.session_reuse_test = true;
@@ -1317,9 +1324,10 @@ int main(int argc, char **argv)
   init_stats(&stats);
 
   // default cipher is too long, lets use old_ciphers. We can tune it later
-  if (strcmp(op.ciphers, default_ciphers) == 0) {
-    strcpy(op.ciphers, old_ciphers);
-  }
+  // commenting this code to fix https://github.com/prbinu/tls-scan/issues/3
+ // if (strcmp(op.ciphers, default_ciphers) == 0) {
+ //   strcpy(op.ciphers, old_ciphers);
+ // }
 
   SSL_CTX *ssl_ctx = ts_ssl_ctx_create(op.ciphers, op.cacert, op.ssl2);
 
@@ -1392,49 +1400,67 @@ int main(int argc, char **argv)
   int pid = getpid();
 
   if (op.pretty) {
-    fprintf(stderr, "---------------------------------\n");
-    fprintf(stderr, " [%d] dnscount            : %d\n",
+    fprintf(stderr, "\n<|---------Scan Summary---------|>\n");
+    fprintf(stderr, " [%d] ciphers             : ", pid);
+
+    int k = 0;
+    while (k < op.cipher_enum_count) {
+      fprintf(stderr, "%s:", op.cipher_enum_list[k]);
+      k++;
+    }
+
+    fprintf(stderr, " (%d)\n", op.cipher_enum_count);
+    fprintf(stderr, " [%d] dns-lookup          : %d\n",
                                                           pid, stats.dnscount);
-    fprintf(stderr, " [%d] network_error       : %d\n",
+    fprintf(stderr, " [%d] network-error       : %d\n",
                                                  pid, stats.network_err_count);
-    fprintf(stderr, " [%d] dns_errcount        : %d\n",
+    fprintf(stderr, " [%d] dns-errcount        : %d\n",
                                                  getpid(), stats.dns_errcount);
-    fprintf(stderr, " [%d] remote_close_error  : %d\n",
+    fprintf(stderr, " [%d] remote-close-error  : %d\n",
                                            getpid(), stats.remote_close_count);
-    fprintf(stderr, " [%d] unknown_error       : %d\n",
+    fprintf(stderr, " [%d] unknown-error       : %d\n",
                                                   getpid(), stats.error_count);
-    fprintf(stderr, " [%d] timeout_error       : %d\n",
+    fprintf(stderr, " [%d] timeout-error       : %d\n",
                                                 getpid(), stats.timeout_count);
-    fprintf(stderr, " [%d] connect_error       : %d\n",
+    fprintf(stderr, " [%d] connect-error       : %d\n",
                                             getpid(), stats.connect_err_count);
-    fprintf(stderr, " [%d] tls_handshake       : %d\n",
+    fprintf(stderr, " [%d] tls-handshake       : %d\n",
                                                 getpid(), stats.tls_handshake);
-    fprintf(stderr, " [%d] gross_tls_handshake : %d\n",
+    fprintf(stderr, " [%d] gross-tls-handshake : %d\n",
                                           getpid(), stats.gross_tls_handshake);
 
     if (stats.starttls_no_support_count) {
-      fprintf(stderr, " [%d] starttls_no_support_count : %d\n",
+      fprintf(stderr, " [%d] starttls-no-support-count : %d\n",
                                     getpid(), stats.starttls_no_support_count);
     }
 
-    fprintf(stderr, " [%d] elapsed_time        : %llu.%llu secs\n",
+    fprintf(stderr, " [%d] elapsed-time        : %llu.%llu secs\n",
                                             getpid(),  et/1000000, et%1000000);
-    fprintf(stderr, "---------------------------------\n");
+    fprintf(stderr, "<|------------------------------|>\n");
   } else {
-    fprintf(stderr, "[%d] dnscount: %d |", pid, stats.dnscount);
-    fprintf(stderr, "network_error: %d |", stats.network_err_count);
-    fprintf(stderr, "dns_errcount: %d |", stats.dns_errcount);
-    fprintf(stderr, "remote_close_error: %d |", stats.remote_close_count);
-    fprintf(stderr, "unknown_error: %d |", stats.error_count);
-    fprintf(stderr, "connect_error: %d |", stats.connect_err_count);
-    fprintf(stderr, "timeout_error: %d |", stats.timeout_count);
-    fprintf(stderr, "tls_handshake: %d |", stats.tls_handshake);
-    fprintf(stderr, "gross_tls_handshake: %d |", stats.gross_tls_handshake);
+    fprintf(stderr, " pid: %d | ciphers:", pid);
+
+    int k = 0;
+    while (k < op.cipher_enum_count) {
+      fprintf(stderr, "%s:", op.cipher_enum_list[k]);
+      k++;
+    }
+
+    fprintf(stderr, " (%d) |", op.cipher_enum_count);
+    fprintf(stderr, "dns-lookup: %d |", pid, stats.dnscount);
+    fprintf(stderr, "network-error: %d |", stats.network_err_count);
+    fprintf(stderr, "dns-errcount: %d |", stats.dns_errcount);
+    fprintf(stderr, "remote-close-error: %d |", stats.remote_close_count);
+    fprintf(stderr, "unknown-error: %d |", stats.error_count);
+    fprintf(stderr, "connect-error: %d |", stats.connect_err_count);
+    fprintf(stderr, "timeout-error: %d |", stats.timeout_count);
+    fprintf(stderr, "tls-handshake: %d |", stats.tls_handshake);
+    fprintf(stderr, "gross-tls-handshake: %d |", stats.gross_tls_handshake);
     if (stats.starttls_no_support_count) {
-      fprintf(stderr, "starttls_no_support_count: %d |",
+      fprintf(stderr, "starttls-no-support-count: %d |",
                                               stats.starttls_no_support_count);
     }
-    fprintf(stderr, "elapsed_time: %llu.%llu secs\n", et/1000000, et%1000000);
+    fprintf(stderr, "elapsed-time: %llu.%llu secs\n", et/1000000, et%1000000);
   }
 
   if (stats.timeout_count == stats.dnscount) {
