@@ -242,7 +242,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 * The openssl fork we use doesn't support new CHACHA ciphers (yet). Here is the tracking issue: https://github.com/PeterMosmans/openssl/issues/38
 * The following ciphers are currently disabled: ```SRP:PSK:RC2:DES-CBC3-MD5:RC4-64-MD5:DES-CBC-MD5:IDEA```
-* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the string.
+* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2)
 
 ## Contributions
 Collaborators and pull requests are welcome!
