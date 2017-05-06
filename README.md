@@ -212,6 +212,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
 -e  --cipher-enum | Enumerate supported ciphers. Currently use `--tls-old` ciphers. Try `--meta-info` to find predefined cipher suite options.
+    --show-unsupported-ciphers | Include unsupported ciphers in the cipher list to JSON output.
 -V  --version-enum | Enumerate supported TLS versions.
 -r  --session-reuse | Enable ssl session reuse.
 -u  --session-print | Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to `--session-file` to test session reuse.
@@ -219,7 +220,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 -a  --all | Shortcut for `--version-enum`, `--cipher-enum` and `--session-reuse` options. This scan can take longer time to complete. Also note if the server employs some form of rate-limiting, your scan may fail.
 -s  --sni=\<host\> | Set TLS extension servername in `ClientHello`. Defaults to input hostname and applied to TLSv1+ only.
 -b  --concurrency=\<number\> | Number of concurrent requests. The default is 1. This option specify the number of worker objects. Concurrency should be set based on your system capacity (memory, cpu, network) etc. Default: 1.
--t  --timeout=\<number\> | Timeout per connection (in seconds). Note that is is per connection and for cipher scans, `tls-sca` makes several connections to the same server. Default: 10.
+-t  --timeout=\<number\> | Timeout per connection (in seconds). Note that is is per connection and for cipher scans, `tls-scan` makes several connections to the same server. Default: 10.
 -S  --sleep=\<number\> | Add milliseconds delay between the connection. Only for `--cipher-enum` and `--version-enum` options. Useful to manage server rate-limits. The max sleep value is 60000 (1 minute). Default: 0.
 -f  --infile=\<file\> | Input file with domains or IPs. This is optional and by default the program accepts input from standard input (`stdin`).
 -o  --outfile=\<file\> | Output file where the result in JSON format is stored. The default is standard output (`stdout`).
@@ -237,6 +238,11 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 --no-parallel-enum |Disable parallel cipher and tls version enumeration. Parallel scan is performed only with '--host' option.
 --meta-info | Print program meta information and exit. Useful if you wanted to see predefined cipher options.
 
+## Caveats
 
-### Contributions
+* The openssl fork we use doesn't support new CHACHA ciphers (yet). Here is the tracking issue: https://github.com/PeterMosmans/openssl/issues/38
+* The following ciphers are currently disabled: ```SRP:PSK:RC2:DES-CBC3-MD5:RC4-64-MD5:DES-CBC-MD5:IDEA```
+* Instead of escaping JSON special chars (eg. double quotes), we are removing those charactors from the string.
+
+## Contributions
 Collaborators and pull requests are welcome!

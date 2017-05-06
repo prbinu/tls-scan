@@ -625,17 +625,19 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
                                       op->cipher_enum_list[supported[i]], fmt);
     }
 
-    fprintf(fp, "%.*s],%c", FMT_INDENT(4), fmt);
-    fprintf(fp, "%.*s\"notSupported\": [%c", FMT_INDENT(4), fmt);
+    if (op->show_unsupported_ciphers) {
+      fprintf(fp, "%.*s],%c", FMT_INDENT(4), fmt);
+      fprintf(fp, "%.*s\"notSupported\": [%c", FMT_INDENT(4), fmt);
 
-    if (u > 0) {
-      for (i = 0; i < u-1; i++) {
-        fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
+      if (u > 0) {
+        for (i = 0; i < u-1; i++) {
+          fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
+                                    op->cipher_enum_list[unsupported[i]], fmt);
+        }
+
+        fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
                                     op->cipher_enum_list[unsupported[i]], fmt);
       }
-
-      fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                    op->cipher_enum_list[unsupported[i]], fmt);
     }
 
     fprintf(fp, "%.*s]%c", FMT_INDENT(4), fmt);

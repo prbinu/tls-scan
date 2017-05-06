@@ -62,6 +62,7 @@ typedef struct options {
   bool cipher_enum;
   char cipher_enum_list[CIPHER_ENUM_SZ][64];
   int cipher_enum_count;
+  bool show_unsupported_ciphers;
   bool tls_vers_enum;
   bool no_parallel_enum;
   bool session_reuse_test;
