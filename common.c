@@ -33,7 +33,11 @@ ssize_t ts_get_line_input(input_handle_t *handle, char *line, size_t len)
   }
 
   while ((read = getline(&line, &len, handle->fp)) != -1) {
-    line[read - 1] = 0;
+    // zero-terminate only new lines
+    if (line[read - 1] == '\n') {
+      line[read - 1] = 0;
+    }
+
     // skip empty lines
     if (read > 0)
       break;
