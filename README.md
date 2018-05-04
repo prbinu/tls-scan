@@ -53,7 +53,7 @@ The newly built tls-scan binary can be found at `./ts-build-root/bin`
 *Test* :
 
 ```sh
-% cd ts-build-root/bin
+% cd tls-build-root/bin
 % ./tls-scan --host=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
 ```
 
