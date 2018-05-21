@@ -53,14 +53,14 @@ ssize_t ts_get_line_input(input_handle_t *handle, char *line, size_t len)
   return read;
 }
 
-uint64_t elapsed_time(struct timeval t1)
+uint64_t ts_elapsed_time(struct timeval t1)
 {
   struct timeval t2;
   gettimeofday(&t2, NULL);
   return ((t2.tv_sec - t1.tv_sec) * 1000000) + (t2.tv_usec - t1.tv_usec);
 }
 
-void get_ip(int fd, char *ipstr, size_t ipstr_len)
+void ts_get_ip(int fd, char *ipstr, size_t ipstr_len)
 {
   ipstr[0] = 0;
   socklen_t len;
@@ -79,3 +79,17 @@ void get_ip(int fd, char *ipstr, size_t ipstr_len)
 
 }
 
+void ts_parse_connect_target(const char *target, char *host, size_t hlen, uint16_t *port)
+{
+  size_t len = strlen(target);
+  for (int i=len-1; i>=0; i--) {
+    if (target[i] == ':') {
+      *port = strtol(target + i + 1, NULL, 10);
+      snprintf(host, hlen, "%.*s", i, target);
+      return;
+    }
+  }
+
+  snprintf(host, OPT_STRLEN, "%s", target);
+  return;
+}

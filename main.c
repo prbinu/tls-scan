@@ -10,7 +10,6 @@
 #include <string.h>
 #include <time.h>
 #include <arpa/inet.h>
-// getpid()
 #include <sys/types.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -332,9 +331,6 @@ void ts_client_destroy(client_t * cli)
 {
   if (cli) {
     struct event_base *base = cli->evbase;
-    // we already calls this in disconnect/error functions before we reach here
-    //ts_client_reset(cli);
-
     ts_adapter_destroy(cli);
 
     if (--client_count == 0) {
@@ -416,8 +412,6 @@ scan_type_t ts_scan_next(client_t *cli)
     return ST_CIPHER;
   }
 
-   //cli->cipher_index++;
-  // print and move to next remote server
   return ST_CERT_PRINT;
 }
 
@@ -429,7 +423,6 @@ void ts_scan_connect(client_t *cli, bool ip_input);
 void ts_scan_end(client_t * cli, scan_type_t st)
 {
 
-  //fprintf(stderr, "elapsed_time: %ld\n", elapsed_time(cli->start_time));
   switch (st) {
 
   case ST_CERT:
@@ -443,7 +436,6 @@ void ts_scan_end(client_t * cli, scan_type_t st)
 
   default:
     break;
-
   }
 
   ts_scan_start(cli);
@@ -481,7 +473,6 @@ void ts_scan_disconnect(client_t * cli)
     default:
       ts_scan_end(cli, st);
       break;
-
     }
   }
 }
@@ -501,9 +492,6 @@ void ts_scan_error(client_t * cli)
       return;
 
     } else {
-      // had a successfull connection before,
-      // so print and move to next remote server
-      //print_tls_cert(cli);
       st = ST_CERT_PRINT;
     }
 
@@ -588,7 +576,6 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
   assert(cli != NULL);
 
   if (events & BEV_EVENT_CONNECTED) {
-    //fprintf(stderr, "TLS Connected %s\n", cli->host);
     stats.gross_tls_handshake++;
 
     switch (ts_scan_type(cli)) {
@@ -600,7 +587,7 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
       int fd;
       if (cli->ip[0] == 0) {
         fd = bufferevent_getfd(bev);
-        get_ip(fd, cli->ip, sizeof(cli->ip));
+        ts_get_ip(fd, cli->ip, sizeof(cli->ip));
       }
 
       strcpy(cli->tls_cert->ip, cli->ip);
@@ -634,8 +621,6 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
       break;
 
     case ST_CIPHER:
-      //fprintf(stderr, "CIPHER: %s OK\n",
-      //                         cli->op->cipher_enum_list[cli->cipher_index]);
       cli->tls_cert->cipher_suite_support[cli->cipher_index] = true;
       break;
 
@@ -649,8 +634,6 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
 
   } else {
     tls_scan_connect_error_handler(bev, events, cli);
-    //fprintf(stderr, "CIPHER: %s FAIL\n",
-    //                          cli->op->cipher_enum_list[cli->cipher_index]);
     ts_scan_error(cli);
   }
 
@@ -662,7 +645,6 @@ void ts_scan_do_tls_handshake(client_t *cli)
 {
   struct bufferevent *bev_ssl = NULL;
   SSL *ssl = NULL;
-  //bufferevent_disable(cli->bev, EV_READ|EV_WRITE);
   ssl = ts_ssl_create(cli->ssl_ctx, cli);
   if (!ssl) {
     cli->event_error = TS_SSL_CREAT_ERR;
@@ -679,7 +661,6 @@ void ts_scan_do_tls_handshake(client_t *cli)
   if (!bev_ssl) {
     fprintf(stderr, "host: %s; ip: %s; error: Bufferevent_openssl_new\n",
                                                            cli->host, cli->ip);
-    //bufferevent_get_openssl_error(cli->temp_bev));
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   } else {
@@ -732,7 +713,7 @@ void ts_scan_tcp_connect_cb(struct bufferevent *bev, short events, void *ptr)
 
     int fd;
     fd = bufferevent_getfd(bev);
-    get_ip(fd, cli->ip, sizeof(cli->ip));
+    ts_get_ip(fd, cli->ip, sizeof(cli->ip));
 
     bufferevent_enable(cli->bev, EV_READ | EV_WRITE);
     ts_adapter_connect(cli);
@@ -752,8 +733,6 @@ void ts_scan_tcp_connect_hostname(client_t * cli)
   bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb, ts_scan_tcp_connect_cb, cli);
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
-
-  //set_linger(bufferevent_getfd(bev), 1, 0);
 
   ret = bufferevent_socket_connect_hostname(cli->bev, cli->dnsbase,
                                             AF_UNSPEC, cli->host, cli->port);
@@ -985,7 +964,7 @@ static const port_protocol_map_t protocol_map[] = {
 
 const char *ts_supported_protocol(uint32_t port)
 {
-   size_t count = sizeof(protocol_map) / sizeof(protocol_map[0]);
+  size_t count = sizeof(protocol_map) / sizeof(protocol_map[0]);
   for (size_t i = 0; i < count; i++) {
 
     if (protocol_map[i].port == port) {
@@ -1002,11 +981,12 @@ void print_usage()
   printf("\n%s\n","With no options, program accepts hostnames from standard input, scans TLS");
   printf("%s\n","on port 443, and print results to standard output");
   printf("\n%s\n", "Options:");
-  printf("  %s\n", "-h  --host=<hostname>    Host to scan");
-  printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
-  //printf("  %s\n", "     --connect        host[:port] to connect (default port 443)");
-  printf("  %s\n", "-P  --starttls=<arg>     Options: smtp, mysql");
-  printf("  %s\n", "-c  --cacert=<file>      Root CA file for certificate validation");
+  printf("  %s\n", "-c  --connect=<arg>      Target host[:port] to connect (default port 443)");
+  // deprecated, use --connect instead
+  //printf("  %s\n", "-h  --host=<hostname>    Host to scan");
+  //printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
+  printf("  %s\n", "    --starttls=<arg>     Options: smtp, mysql");
+  printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
   printf("  %s\n", "                         NOTE: overwritten by --ssl2, --ssl3, --tls1");
   printf("  %s\n", "                         --tls1_1, --tls1_2 options (if provided)");
@@ -1045,14 +1025,14 @@ void print_usage()
   printf("  %s\n", "    --tls-interm         Mozilla's intermediate cipher list");
   printf("  %s\n", "    --tls-old            Mozilla's old (backward compatible cipher list)");
   printf("  %s\n", "    --no-parallel-enum   Disable parallel cipher and tls version enumeration.");
-  printf("  %s\n", "                         Parallel scan is performed only with -host option");
+  printf("  %s\n", "                         Parallel scan is performed only with -connect option");
   printf("  %s\n", "    --meta-info          Print program meta information and exit");
 
   printf("\n");
   printf("%s\n", "NOTE: If you pipe the output to another process, redirect stderr to /dev/null");
   printf("\n%s\n", "Examples:");
-  printf("  %s\n", "% tls-scan --host=smtp.mail.yahoo.com \\");
-  printf("  %s\n", "              --port=587 --starttls=smtp  --cacert=./cert.pem 2> /dev/null");
+  printf("  %s\n", "% tls-scan -c smtp.mail.yahoo.com:587 \\");
+  printf("  %s\n", "              --starttls=smtp  --cacert=./cert.pem 2> /dev/null");
   printf("  %s\n", "% tls-scan --infile=domains.txt --cacert=./cert.pem 2> /dev/null");
   printf("  %s\n", "% cat domains.txt | tls-scan --port=443 --cacert=./cert.pem 2> /dev/null");
   printf("\n");
@@ -1080,9 +1060,10 @@ int main(int argc, char **argv)
 
   static struct option long_options[] = {
     {"starttls", required_argument, 0, 'P'},
+    {"connect", required_argument, 0, 'c'},
     {"host", required_argument, 0, 'h'},
     {"port", required_argument, 0, 'p'},
-    {"cacert", required_argument, 0, 'c'},
+    {"cacert", required_argument, 0, '1'},
     {"ciphers", required_argument, 0, 'C'},
     {"cipher-enum", no_argument, 0, 'e'},
     {"show-unsupported-ciphers", no_argument, 0, 'U'},
@@ -1146,7 +1127,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:23456789VXnOijMH",
+                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456789VXnOijMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1165,7 +1146,7 @@ int main(int argc, char **argv)
       op.port = strtol(optarg, NULL, 10);
       break;
     case 'c':
-      snprintf(op.cacert, OPT_STRLEN, "%s", optarg);
+      ts_parse_connect_target(optarg, op.host, OPT_STRLEN, &op.port);
       break;
     case 'C':
       snprintf(op.ciphers, OPT_STRLEN, "%s", optarg);
@@ -1240,6 +1221,9 @@ int main(int argc, char **argv)
       break;
     case 'X':
       op.no_parallel_enum = true;
+      break;
+    case '1':
+      snprintf(op.cacert, OPT_STRLEN, "%s", optarg);
       break;
     case '2':
       op.ssl2 = true;
@@ -1396,7 +1380,7 @@ int main(int argc, char **argv)
 
   free(op.cert_obj_pool);
 
-  uint64_t et = elapsed_time(stats.start_time);
+  uint64_t et = ts_elapsed_time(stats.start_time);
   int pid = getpid();
 
   if (op.pretty) {

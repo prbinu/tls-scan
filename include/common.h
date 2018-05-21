@@ -134,12 +134,14 @@ extern input_handle_t in_handle;
 ssize_t ts_get_line_input(input_handle_t *in_handle, char *line, size_t len);
 
 /* elapsed time in seconds */
-uint64_t elapsed_time(struct timeval t1);
+uint64_t ts_elapsed_time(struct timeval t1);
 
 /* returns ip str from socket fd */
-void get_ip(int fd, char *ipstr, size_t ipstr_len);
+void ts_get_ip(int fd, char *ipstr, size_t ipstr_len);
 
 /* stats struct object (implemented in main.c) */
 extern stats_t *ts_get_stats_obj();
+
+void ts_parse_connect_target(const char *target, char *host, size_t hlen, uint16_t *port);
 
 #endif
