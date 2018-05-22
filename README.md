@@ -1,14 +1,14 @@
 [![Build Status](https://travis-ci.org/prbinu/tls-scan.svg?branch=master)](https://travis-ci.org/prbinu/tls-scan)
-[![Release](https://img.shields.io/badge/release-0.1.6-blue.svg?label=release)](https://github.com/prbinu/tls-scan/releases/latest)
+[![Release](https://img.shields.io/badge/release-latest-blue.svg?label=release)](https://github.com/prbinu/tls-scan/releases/latest)
 # tls-scan
 
-A program to scan TLS based servers and collect x509 certificates, ciphers and related information. It produces results in JSON format. `tls-scan` is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
+A program to scan TLS based servers and collect X.509 certificates, ciphers and related information. It produces results in JSON format. `tls-scan` is a single threaded asynchronous/event-based program (powered by libevent) capable of concurrently scan thousands of TLS servers. It can be combined with other tools such as GNU parallel to vertically scale in multi-core machines.
 
 `tls-scan` helps developers and security engineers to track/test/debug certificates and TLS configurations of servers within their organization.
 
 ## Features
 
-* Extract x509 certificate from the server and print it in JSON format
+* Extract X.509 certificate from the server and print it in JSON format
 * Certificate and host name verification checks
 * Cipher and TLS version enumeration
 * TLS compression checks
