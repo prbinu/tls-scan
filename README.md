@@ -203,8 +203,8 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 ## Help
 
-| Option | Description |
-|----------------|------------|
+|     Option     | Description |
+|----------------|-------------|
 -H  --help | Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
 -c  --connect=\<arg\> | `host[:port]` to scan. By passing an additional flag `--ip`, the host value will be interpreted as an IP address.
 -p  --port=\<arg\> | Destination TCP port. Default: `443`
