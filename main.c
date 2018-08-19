@@ -139,6 +139,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
                                                    cli->tls_ver_index, cipher);
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   } else if (cli->op->ssl2) {
 
     if (!SSL_set_ssl_method(ssl, SSLv2_client_method())) {
@@ -146,7 +147,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
                                 "SSL_set_ssl_method (SSL2) failed, skipping..",
                                                    cli->tls_ver_index, cipher);
     }
-
+#endif
   } else {
 
     if (!SSL_set_ssl_method(ssl, SSLv23_client_method())) {
@@ -196,11 +197,15 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
   SSL_load_error_strings();
 
   SSL_CTX *ssl_ctx = NULL;
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (ssl2) {
     ssl_ctx = SSL_CTX_new(SSLv2_client_method());
   } else {
     ssl_ctx = SSL_CTX_new(SSLv23_client_method());
   }
+#else
+  ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+#endif
 
   if (!SSL_CTX_set_cipher_list(ssl_ctx, ciphers)) {
     fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
@@ -223,8 +228,9 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
   SSL_CTX_set_verify_depth(ssl_ctx, 5);
 
   SSL_COMP_add_compression_method(0, COMP_zlib());
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   SSL_COMP_add_compression_method(1, COMP_rle());
-
+#endif
   return ssl_ctx;
 }
 

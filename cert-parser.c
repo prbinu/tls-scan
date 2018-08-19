@@ -120,7 +120,11 @@ static char *get_x509_fingerprint(const X509 *cert,
 
 static const char *get_signature_algorithm(const X509 *cert)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   int sig_nid = OBJ_obj2nid((cert)->sig_alg->algorithm);
+#else
+  int sig_nid = X509_get_signature_nid(cert);
+#endif
   return OBJ_nid2ln(sig_nid);
 }
 
@@ -352,9 +356,15 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert,
                                  comp ? SSL_COMP_get_name(expansion) : "NONE");
 
   SSL_SESSION *session = SSL_get_session(ssl);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (session) {
     tls_cert->session_lifetime_hint = session->tlsext_tick_lifetime_hint;
   }
+#else
+  if (session && SSL_SESSION_has_ticket(session)) {
+    tls_cert->session_lifetime_hint = SSL_SESSION_get_ticket_lifetime_hint(session);
+  }
+#endif
 
   // https://www.openssl.org/docs/man1.1.0/crypto/PEM_write_SSL_SESSION.html
   if (!tls_cert->session) {
@@ -496,8 +506,10 @@ void ts_tls_cert_reset(struct tls_cert* tls_cert)
 const SSL_METHOD *ts_tls_get_method(int index)
 {
   switch (index) {
-  case 0:
-    return SSLv2_client_method();
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    case 0:
+      return SSLv2_client_method();
+#endif
   case 1:
     return SSLv3_client_method();
   case 2:
