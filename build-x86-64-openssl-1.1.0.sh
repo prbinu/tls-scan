@@ -7,6 +7,7 @@ echo " "
 echo "  IMPORTANT NOTICE"
 echo "  Build Pre-requisites :"
 echo " "
+echo "    gcc"
 echo "    autoconf"
 echo "    automake"
 echo "    libtool"
@@ -77,7 +78,7 @@ else
 
   echo ">>> ZLIB complete"
   cd ${BUILDDIR}/build/openssl-x86_64
-  ./config enable-static-engine enable-ec_nistp_64_gcc_128 enable-weak-ssl-ciphers enable-gost enable-idea enable-md2 enable-rc2 enable-rc5 enable-rfc3779 enable-ssl-trace enable-ssl2 enable-ssl3 enable-ssl3-method enable-ssl2-method enable-zlib no-shared --prefix=${OUTDIR} --openssldir=${OUTDIR}/ssl -I${OUTDIR}/include -L${OUTDIR}/lib --with-zlib-lib=${OUTDIR}/lib --with-zlib-include=${OUTDIR}/include
+  ./config enable-static-engine enable-ec_nistp_64_gcc_128 enable-weak-ssl-ciphers enable-gost enable-idea enable-md2 enable-rc2 enable-rc5 enable-rfc3779 enable-ssl-trace enable-ssl2 enable-ssl3 enable-ssl3-method enable-zlib no-shared --prefix=${OUTDIR} --openssldir=${OUTDIR}/ssl -I${OUTDIR}/include -L${OUTDIR}/lib --with-zlib-lib=${OUTDIR}/lib --with-zlib-include=${OUTDIR}/include
 fi
 
 make

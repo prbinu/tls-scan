@@ -3,6 +3,19 @@
 #  TS_BUILDDIR : Build root directory. Default to current working directory
 #  TS_INSTALLDIR : Installation directory. Default to ${TS_BUILDDIR}
 #
+echo " "
+echo "  IMPORTANT NOTICE"
+echo "  Build Pre-requisites :"
+echo " "
+echo "    gcc"
+echo "    autoconf"
+echo "    automake"
+echo "    libtool"
+echo "    pkg-config"
+echo "Make sure you have these packages installed before you proceed with tls-scan build"
+echo "continue in a moment ..."
+sleep 10
+
 set -e
 CD=`pwd`
 OS=`uname`
