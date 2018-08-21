@@ -1155,7 +1155,7 @@ int main(int argc, char **argv)
       ts_parse_connect_target(optarg, op.host, OPT_STRLEN, &op.port);
       break;
     case 'C':
-      snprintf(op.ciphers, OPT_STRLEN, "%s", optarg);
+      snprintf(op.ciphers, OPT_CIPHER_STRLEN, "%s", optarg);
       break;
     case 'e':
       op.cipher_enum = true;
