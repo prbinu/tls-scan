@@ -1127,6 +1127,10 @@ int main(int argc, char **argv)
   int long_index = 0;
   int valid = 0;
   op.ssl2 = false;
+  op.ssl3 = false;
+  op.tls1 = false;
+  op.tls1_1 = false;
+  op.tls1_2 = false;
   op.protocol_adapter_index = -1;
 
   int tmsec = 0;
@@ -1236,15 +1240,19 @@ int main(int argc, char **argv)
       strcpy(op.ciphers, sslv2_ciphers);
       break;
     case '3':
+      op.ssl3 = true;
       strcpy(op.ciphers, sslv3_ciphers);
       break;
     case '4':
+      op.tls1 = true;
       strcpy(op.ciphers, tlsv1_ciphers);
       break;
     case '5':
+      op.tls1_1 = true;
       strcpy(op.ciphers, tlsv1_ciphers);
       break;
     case '6':
+      op.tls1_2 = false;
       strcpy(op.ciphers, tlsv1_2_ciphers);
       break;
     case '7':

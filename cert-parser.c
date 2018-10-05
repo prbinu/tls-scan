@@ -355,6 +355,9 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert,
   snprintf(tls_cert->expansion, sizeof(tls_cert->expansion), "%s",
                                  comp ? SSL_COMP_get_name(expansion) : "NONE");
 
+  snprintf(tls_cert->tls_version, sizeof(tls_cert->tls_version), "%s",
+                                                         SSL_get_version(ssl));
+
   SSL_SESSION *session = SSL_get_session(ssl);
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
   if (session) {
@@ -560,6 +563,8 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   }
 
   fprintf(fp, "%.*s\"port\": %d,%c", FMT_INDENT(2), tls_cert->port, fmt);
+  fprintf(fp, "%.*s\"tlsVersion\": \"%s\",%c", FMT_INDENT(2),
+                                                    tls_cert->tls_version, fmt);
   fprintf(fp, "%.*s\"cipher\": \"%s\",%c", FMT_INDENT(2), tls_cert->cipher, fmt);
 
   if (tls_cert->temp_pubkey_size > 0) {
@@ -604,7 +609,7 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
                                             get_ssl_version_str(vers[0]), fmt);
 #endif
-    
+
     for (i = 1; i < j-1; i++) {
       fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
                                             get_ssl_version_str(vers[i]), fmt);
