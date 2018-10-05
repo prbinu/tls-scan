@@ -599,7 +599,13 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
       }
     }
 
-    for (i = 0; i < j-1; i++) {
+// workaround to supress SSLv2 if openssl version > 1.1.x
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+    fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
+                                            get_ssl_version_str(vers[0]), fmt);
+#endif
+    
+    for (i = 1; i < j-1; i++) {
       fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
                                             get_ssl_version_str(vers[i]), fmt);
     }
