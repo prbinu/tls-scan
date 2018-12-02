@@ -252,7 +252,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 The `tls-scan` binary can be found at `./ts-build-root_v1_3/bin`.
 
-`tls-scan` built with openssl-1.1.1 only supports latest ciphers. It cannot be used to enumerate SSLv2 or EXP ciphers. This is less than optimal solution, but as a workaround you may use tls-scan+openssl-1.1.0 for scanning latest ciphers and use tls-scan for scanning old ciphers and SSL versions. The results may combine using json tools.
+`tls-scan` built with openssl-1.1.1 only supports latest ciphers. It cannot be used to enumerate SSLv2 or EXP ciphers. This is less than optimal solution, but as a workaround you may use tls-scan+openssl-1.1.1 for scanning latest ciphers and use tls-scan for scanning old ciphers and SSL versions. The results may combine using json tools.
 
 ## Contributions
 Collaborators and pull requests are welcome!
