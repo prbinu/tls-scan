@@ -16,6 +16,18 @@
 #define TS_SERIALNO_LEN 128
 #define TS_ERRMSG_LEN 256
 
+/* ssl2, ssl3, tls1, tls1_1, tls1_2 tls1_3*/
+#define MAX_TLS_VERSION 6
+
+enum TLSVersion {
+    SSLv2 = 0,
+    SSLv3 = 1,
+    TLSv1 = 2,
+    TLSv1_1 = 3,
+    TLSv1_2 = 4,
+    TLSv1_3 = 5
+};
+
 struct x509_cert {
   char sha1_fingerprint[3*SHA1LEN+1];
   char sig_alg[SIG_ALGSTR_LEN];
@@ -64,7 +76,7 @@ struct tls_cert {
 
   struct x509_cert x509[CERT_CHAIN_MAXLEN];
   BIO *san;
-  bool tls_ver_support[5];
+  bool tls_ver_support[MAX_TLS_VERSION];
   bool *cipher_suite_support;
   SSL_SESSION *session;
   //unsigned char *ssl_session;
@@ -79,9 +91,6 @@ void ts_tls_cert_reset(struct tls_cert *tls_cert);
 void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert, FILE *fp, bool pretty);
 
 void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty);
-
-/* ssl2, ssl3, tls1, tls1_1, tls1_2 */
-#define MAX_TLS_VERSION 5
 
 /* */
 const SSL_METHOD *ts_tls_get_method(int index);

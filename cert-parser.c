@@ -283,16 +283,18 @@ static const char *bool_to_str(bool b)
 static const char *get_ssl_version_str(int index)
 {
   switch (index) {
-  case 0:
+  case SSLv2:
     return "SSLv2";
-  case 1:
+  case SSLv3:
     return "SSLv3";
-  case 2:
+  case TLSv1:
     return "TLSv1";
-  case 3:
+  case TLSv1_1:
     return "TLSv1_1";
-  case 4:
+  case TLSv1_2:
     return "TLSv1_2";
+  case TLSv1_3:
+    return "TLSv1_3";
   default:
     return "UNKNOWN";
   }
@@ -521,6 +523,10 @@ const SSL_METHOD *ts_tls_get_method(int index)
     return TLSv1_1_client_method();
   case 4:
     return TLSv1_2_client_method();
+  case 5:
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+    return tlsv1_3_client_method(); //TLSv1_3_client_method();
+#endif
   default:
     return SSLv23_client_method();
   }

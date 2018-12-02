@@ -44,9 +44,11 @@ static const char *tlsv1_ciphers =
 static const char *tlsv1_2_ciphers =
     "NULL-SHA256:AES128-SHA256:AES256-SHA256:AES128-GCM-SHA256:AES256-GCM-SHA384:DH-RSA-AES128-SHA256:DH-RSA-AES256-SHA256:DH-RSA-AES128-GCM-SHA256:DH-RSA-AES256-GCM-SHA384:DH-DSS-AES128-SHA256:DH-DSS-AES256-SHA256:DH-DSS-AES128-GCM-SHA256:DH-DSS-AES256-GCM-SHA384:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-DSS-AES128-SHA256:DHE-DSS-AES256-SHA256:DHE-DSS-AES128-GCM-SHA256:DHE-DSS-AES256-GCM-SHA384:ECDH-RSA-AES128-SHA256:ECDH-RSA-AES256-SHA384:ECDH-RSA-AES128-GCM-SHA256:ECDH-RSA-AES256-GCM-SHA384:ECDH-ECDSA-AES128-SHA256:ECDH-ECDSA-AES256-SHA384:ECDH-ECDSA-AES128-GCM-SHA256:ECDH-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ADH-AES128-SHA256:ADH-AES256-SHA256:ADH-AES128-GCM-SHA256:ADH-AES256-GCM-SHA384:AES128-CCM:AES256-CCM:DHE-RSA-AES128-CCM:DHE-RSA-AES256-CCM:AES128-CCM8:AES256-CCM8:DHE-RSA-AES128-CCM8:DHE-RSA-AES256-CCM8:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-CCM8:ECDHE-ECDSA-AES256-CCM8:ECDHE-ECDSA-CAMELLIA128-SHA256:ECDHE-ECDSA-CAMELLIA256-SHA384:ECDH-ECDSA-CAMELLIA128-SHA256:ECDH-ECDSA-CAMELLIA256-SHA384:ECDHE-RSA-CAMELLIA128-SHA256:ECDHE-RSA-CAMELLIA256-SHA384:ECDH-RSA-CAMELLIA128-SHA256:ECDH-RSA-CAMELLIA256-SHA384:PSK-NULL-SHA:DHE-PSK-NULL-SHA:RSA-PSK-NULL-SHA:PSK-RC4-SHA:PSK-3DES-EDE-CBC-SHA:PSK-AES128-CBC-SHA:PSK-AES256-CBC-SHA:DHE-PSK-RC4-SHA:DHE-PSK-3DES-EDE-CBC-SHA:DHE-PSK-AES128-CBC-SHA:DHE-PSK-AES256-CBC-SHA:RSA-PSK-RC4-SHA:RSA-PSK-3DES-EDE-CBC-SHA:RSA-PSK-AES128-CBC-SHA:RSA-PSK-AES256-CBC-SHA:PSK-AES128-GCM-SHA256:PSK-AES256-GCM-SHA384:DHE-PSK-AES128-GCM-SHA256:DHE-PSK-AES256-GCM-SHA384:RSA-PSK-AES128-GCM-SHA256:RSA-PSK-AES256-GCM-SHA384:PSK-AES128-CBC-SHA256:PSK-AES256-CBC-SHA384:PSK-NULL-SHA256:PSK-NULL-SHA384:DHE-PSK-AES128-CBC-SHA256:DHE-PSK-AES256-CBC-SHA384:DHE-PSK-NULL-SHA256:DHE-PSK-NULL-SHA384:RSA-PSK-AES128-CBC-SHA256:RSA-PSK-AES256-CBC-SHA384:RSA-PSK-NULL-SHA256:RSA-PSK-NULL-SHA384:PSK-AES128-GCM-SHA256:PSK-AES256-GCM-SHA384:ECDHE-PSK-RC4-SHA:ECDHE-PSK-3DES-EDE-CBC-SHA:ECDHE-PSK-AES128-CBC-SHA:ECDHE-PSK-AES256-CBC-SHA:ECDHE-PSK-AES128-CBC-SHA256:ECDHE-PSK-AES256-CBC-SHA384:ECDHE-PSK-NULL-SHA:ECDHE-PSK-NULL-SHA256:ECDHE-PSK-NULL-SHA384:PSK-CAMELLIA128-SHA256:PSK-CAMELLIA256-SHA384:DHE-PSK-CAMELLIA128-SHA256:DHE-PSK-CAMELLIA256-SHA384:RSA-PSK-CAMELLIA128-SHA256:RSA-PSK-CAMELLIA256-SHA384:ECDHE-PSK-CAMELLIA128-SHA256:ECDHE-PSK-CAMELLIA256-SHA384:PSK-AES128-CCM:PSK-AES256-CCM:DHE-PSK-AES128-CCM:DHE-PSK-AES256-CCM:PSK-AES128-CCM8:PSK-AES256-CCM8:DHE-PSK-AES128-CCM8:DHE-PSK-AES256-CCM8";
 
+static const char *tlsv1_3_ciphers = "TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256";
+
 /* mozilla */
 static const char *modern_ciphers =
-    "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256";
+    "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256:TLS_AES_128_CCM_8_SHA256:TLS_AES_128_CCM_SHA256";
 static const char *interm_ciphers =
     "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS";
 static const char *old_ciphers =
@@ -103,6 +105,38 @@ void global_init()
 
 /* returns current scan type/state */
 scan_type_t ts_scan_type(const client_t *cli);
+
+// https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_info_callback.html
+void apps_ssl_info_callback(SSL *s, int where, int ret) {
+  const char *str;
+  int w;
+
+  w = where & ~SSL_ST_MASK;
+
+  if (w & SSL_ST_CONNECT) str = "SSL_connect";
+  else if (w & SSL_ST_ACCEPT) str = "SSL_accept";
+  else str = "undefined";
+
+  if (where & SSL_CB_LOOP) {
+    printf("%s:%s\n", str, SSL_state_string_long(s));
+  }
+  else if (where & SSL_CB_ALERT) {
+    str = (where & SSL_CB_READ) ? "read" : "write";
+    printf("SSL3 alert %s:%s:%s\n",
+                        str,
+                        SSL_alert_type_string_long(ret),
+                        SSL_alert_desc_string_long(ret));
+  }
+  else if (where & SSL_CB_EXIT) {
+    if (ret == 0)
+      printf("%s:failed in %s\n",
+                                str, SSL_state_string_long(s));
+    else if (ret < 0) {
+      printf("%s:error in %s\n",
+                                str, SSL_state_string_long(s));
+    }
+  }
+}
 
 /* create an SSL object, and initiaze it */
 SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
@@ -206,6 +240,8 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
 #else
   ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 #endif
+
+  //SSL_CTX_set_info_callback(ssl_ctx, apps_ssl_info_callback);
 
   if (!SSL_CTX_set_cipher_list(ssl_ctx, ciphers)) {
     fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
@@ -984,6 +1020,7 @@ const char *ts_supported_protocol(uint32_t port)
 void print_usage()
 {
   printf("%s\n", "Usage: tls-scan [OPTION]...");
+  printf("Built with OpenSSL-%x\n", OPENSSL_VERSION_NUMBER);
   printf("\n%s\n","With no options, program accepts hostnames from standard input, scans TLS");
   printf("%s\n","on port 443, and print results to standard output");
   printf("\n%s\n", "Options:");
@@ -995,7 +1032,11 @@ void print_usage()
   printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
   printf("  %s\n", "                         NOTE: overwritten by --ssl2, --ssl3, --tls1");
-  printf("  %s\n", "                         --tls1_1, --tls1_2 options (if provided)");
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+  printf("  %s\n", "                         --tls1_1, --tls1_2, --tls1_3 options (if provided)");
+#else
+  printf("  %s\n", "                         --tls1_1, --tls1_2, options (if provided)");
+#endif
   printf("  %s\n", "                         https://www.openssl.org/docs/man1.0.1/apps/ciphers.html");
   printf("  %s\n", "-e  --cipher-enum        Enumerate supported ciphers");
   printf("  %s\n", "    --show-unsupported-ciphers");
@@ -1005,8 +1046,7 @@ void print_usage()
   printf("  %s\n", "-u  --session-print      Print SSL session in PEM format to stderr");
   printf("  %s\n", "-T  --session-file=<file>");
   printf("  %s\n", "                         Pass file that contains SSL session in PEM format");
-  printf("  %s\n", "-a  --all                Enable all fields (--version-enum, --cipher-enum,");
-  printf("  %s\n", "                         --session-reuse)");
+  printf("  %s\n", "-a  --all                Enable --version-enum and --cipher-enum");
   printf("  %s\n", "-s  --sni=<host>         Set TLS extension servername in ClientHello");
   printf("  %s\n", "                         Defaults to input hostname & Applied to TLSv1+ only");
   printf("  %s\n", "-b  --concurrency=<number>");
@@ -1026,6 +1066,9 @@ void print_usage()
   printf("  %s\n", "    --tls1               TLSv1 ciphers");
   printf("  %s\n", "    --tls1_1             TLSv1_1 ciphers");
   printf("  %s\n", "    --tls1_2             TLSv1_2 ciphers");
+#if OPENSSL_VERSION_NUMBER > 0x10100000L
+  printf("  %s\n", "    --tls1_3             TLSv1_3 ciphers");
+#endif
   printf("  %s\n", "    --tls-modern         Mozilla's modern cipher list. See:");
   printf("  %s\n", "                         https://wiki.mozilla.org/Security/Server_Side_TLS");
   printf("  %s\n", "    --tls-interm         Mozilla's intermediate cipher list");
@@ -1052,6 +1095,7 @@ void print_meta()
   printf("ssl3-cipher: %s\n\n", sslv3_ciphers);
   printf("tls1-cipher: %s\n\n", tlsv1_ciphers);
   printf("tls1_2-cipher: %s\n\n", tlsv1_2_ciphers);
+  printf("tls1_3-cipher: %s\n\n", tlsv1_3_ciphers);
   printf("modern-cipher: %s\n\n", modern_ciphers);
   printf("interm-cipher: %s\n\n", interm_ciphers);
   printf("old-cipher: %s\n\n", old_ciphers);
@@ -1083,6 +1127,7 @@ int main(int argc, char **argv)
     {"tls1", no_argument, 0, '4'},
     {"tls1_1", no_argument, 0, '5'},
     {"tls1_2", no_argument, 0, '6'},
+    {"tls1_3", no_argument, 0, 'Q'},
     {"tls-modern", no_argument, 0, '7'},
     {"tls-interm", no_argument, 0, '8'},
     {"tls-old", no_argument, 0, '9'},
@@ -1137,7 +1182,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456789VXnOijMH",
+                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456Q789VXnOijMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1179,7 +1224,7 @@ int main(int argc, char **argv)
     case 'a':
       op.cipher_enum = true;
       op.tls_vers_enum = true;
-      op.session_reuse_test = true;
+      //op.session_reuse_test = true;
       break;
     case 's':
       snprintf(op.sni, DEFAULT_HOSTLEN, "%s", optarg);
@@ -1252,8 +1297,12 @@ int main(int argc, char **argv)
       strcpy(op.ciphers, tlsv1_ciphers);
       break;
     case '6':
-      op.tls1_2 = false;
+      op.tls1_2 = true;
       strcpy(op.ciphers, tlsv1_2_ciphers);
+      break;
+    case 'Q':
+      op.tls1_3 = true;
+      strcpy(op.ciphers, tlsv1_3_ciphers);
       break;
     case '7':
       strcpy(op.ciphers, modern_ciphers);

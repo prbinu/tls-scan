@@ -60,6 +60,7 @@ typedef struct options {
   bool tls1;
   bool tls1_1;
   bool tls1_2;
+  bool tls1_3;
   char cacert[OPT_STRLEN];
   char sni[DEFAULT_HOSTLEN];
   char ciphers[OPT_CIPHER_STRLEN];

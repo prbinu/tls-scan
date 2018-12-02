@@ -244,15 +244,15 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 * The following ciphers are currently disabled: ```SRP:PSK:RC2:DES-CBC3-MD5:RC4-64-MD5:DES-CBC-MD5:IDEA```
 * Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2)
 
-## CHACHA20_POLY1305 Support
+## CHACHA20_POLY1305 and  TLS-1.3 Support
 
 ```sh
-% ./build-x86-64-openssl-1.1.0.sh
+% ./build-x86-64-openssl-1.1.1.sh
 ```
 
-The `tls-scan` binary can be found at `./ts-build-root/bin`. Use a different directory/workspace to build this version.
+The `tls-scan` binary can be found at `./ts-build-root_v1_3/bin`.
 
-`tls-scan` built with openssl-1.1.0 only supports latest ciphers. It cannot be used to enumerate SSLv2 or EXP ciphers. This is less than optimal solution, but as a workaround you may use tls-scan+openssl-1.1.0 for scanning latest ciphers and use tls-scan for scanning old ciphers and SSL versions. The results may combine using json tools.
+`tls-scan` built with openssl-1.1.1 only supports latest ciphers. It cannot be used to enumerate SSLv2 or EXP ciphers. This is less than optimal solution, but as a workaround you may use tls-scan+openssl-1.1.0 for scanning latest ciphers and use tls-scan for scanning old ciphers and SSL versions. The results may combine using json tools.
 
 ## Contributions
 Collaborators and pull requests are welcome!
