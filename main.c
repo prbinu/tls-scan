@@ -13,6 +13,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <sys/time.h>
+#include <inttypes.h>
 // openssl headers
 #include <openssl/ssl.h>
 #include <openssl/bio.h>
@@ -106,8 +108,45 @@ void global_init()
 /* returns current scan type/state */
 scan_type_t ts_scan_type(const client_t *cli);
 
+// https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
+// seperate given ciphers into to TLS1.3 and pre-TLS1.3 cipher group
+void get_ciphersuites_and_cipher_list(const char *ciphers, char o_ciphersuites[], char o_cipher_list[])
+{
+  char *c = NULL;
+  char *c2 = strdup(ciphers);
+  char *tptr = c2;
+  size_t n = 0, m = 0;
+  o_ciphersuites[0] = o_cipher_list[0] = 0;
+
+  while ((c = strtok_r(tptr, ":", &tptr))) {
+    if(strstr(tlsv1_3_ciphers, c) != NULL) {
+      if (n == 0) {
+        strcpy(o_ciphersuites, c);
+      } else {
+        strcat(o_ciphersuites, ":");
+        strcat(o_ciphersuites, c);
+      }
+
+      n++;
+    } else {
+      if (m == 0) {
+        strcpy(o_cipher_list, c);
+      } else {
+        strcat(o_cipher_list, ":");
+        strcat(o_cipher_list, c);
+      }
+
+      m++;
+    }
+  }
+
+  free(c2);
+  return;
+}
+
 // https://www.openssl.org/docs/man1.1.0/ssl/SSL_CTX_set_info_callback.html
-void apps_ssl_info_callback(SSL *s, int where, int ret) {
+void apps_ssl_info_callback(SSL *s, int where, int ret)
+{
   const char *str;
   int w;
 
@@ -204,13 +243,27 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
     SSL_set_tlsext_status_type(ssl, TLSEXT_STATUSTYPE_ocsp);
   }
 
-    // https://www.openssl.org/docs/man1.0.2/ssl/SSL_set_cipher_list.html
-  if (!SSL_set_cipher_list(ssl, cipher)) {
-    fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, skipping..",
+  // a hack, to void additional local variables
+  get_ciphersuites_and_cipher_list(cipher, op.ciphersuites, op.cipher_list);
+
+  // https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
+  // if no ciphers, then set NULL
+  if (!SSL_set_cipher_list(ssl, (strlen(op.cipher_list) == 0) ? "NULL": op.cipher_list)) {
+      fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, skipping..",
                                                     cli->cipher_index, cipher);
-    SSL_free(ssl);
-    return NULL;
+      SSL_free(ssl);
+      return NULL;
   }
+#if OPENSSL_VERSION_NUMBER > 0x10101010L
+  if (strlen(op.ciphersuites) > 0) {
+    if (!SSL_set_ciphersuites(ssl, op.ciphersuites)) {
+      fprintf(stderr, "%s %d %s\n", "SSL_set_ciphersuites failed, skipping..",
+                                                    cli->cipher_index, cipher);
+      SSL_free(ssl);
+      return NULL;
+    }
+  }
+#endif
 
   if (!cli->op->ssl2) {
     // Set hostname for SNI extension
@@ -243,11 +296,20 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
 
   //SSL_CTX_set_info_callback(ssl_ctx, apps_ssl_info_callback);
 
-  if (!SSL_CTX_set_cipher_list(ssl_ctx, ciphers)) {
-    fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
-    exit(EXIT_FAILURE);
+  if (!SSL_CTX_set_cipher_list(ssl_ctx,
+                    (strlen(op.cipher_list) == 0) ? "NULL": op.cipher_list)) {
+      fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
+      exit(EXIT_FAILURE);
+  }
+#if OPENSSL_VERSION_NUMBER > 0x10101010L
+  if (strlen(op.ciphersuites) > 0) {
+    if (!SSL_CTX_set_ciphersuites(ssl_ctx, op.ciphersuites)) {
+      fprintf(stderr, "%s\n", "SSL_CTX_set_ciphersuites failed, exiting..");
+      exit(EXIT_FAILURE);
+    }
   }
 
+#endif
   /*
   SSL_CTX_set_verify(ssl_ctx, SSL_VERIFY_PEER, dubug_ssl_verify_callback);
   SSL_CTX_set_info_callback(ssl_ctx, dubug_ssl_info_callback);
@@ -1020,7 +1082,7 @@ const char *ts_supported_protocol(uint32_t port)
 void print_usage()
 {
   printf("%s\n", "Usage: tls-scan [OPTION]...");
-  printf("Built with OpenSSL-%x\n", OPENSSL_VERSION_NUMBER);
+  printf("Built with OpenSSL-%lx\n", OPENSSL_VERSION_NUMBER);
   printf("\n%s\n","With no options, program accepts hostnames from standard input, scans TLS");
   printf("%s\n","on port 443, and print results to standard output");
   printf("\n%s\n", "Options:");
@@ -1031,10 +1093,11 @@ void print_usage()
   printf("  %s\n", "    --starttls=<arg>     Options: smtp, mysql");
   printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
-  printf("  %s\n", "                         NOTE: overwritten by --ssl2, --ssl3, --tls1");
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
+  printf("  %s\n", "                         NOTE: overwritten by --ssl3, --tls1");
   printf("  %s\n", "                         --tls1_1, --tls1_2, --tls1_3 options (if provided)");
 #else
+  printf("  %s\n", "                         NOTE: overwritten by --ssl2, --ssl3, --tls1");
   printf("  %s\n", "                         --tls1_1, --tls1_2, options (if provided)");
 #endif
   printf("  %s\n", "                         https://www.openssl.org/docs/man1.0.1/apps/ciphers.html");
@@ -1376,6 +1439,7 @@ int main(int argc, char **argv)
  //   strcpy(op.ciphers, old_ciphers);
  // }
 
+  get_ciphersuites_and_cipher_list(op.ciphers, op.ciphersuites, op.cipher_list);
   SSL_CTX *ssl_ctx = ts_ssl_ctx_create(op.ciphers, op.cacert, op.ssl2);
 
 
@@ -1481,7 +1545,7 @@ int main(int argc, char **argv)
                                     getpid(), stats.starttls_no_support_count);
     }
 
-    fprintf(stderr, " [%d] elapsed-time        : %llu.%llu secs\n",
+    fprintf(stderr, " [%d] elapsed-time        : %"PRIu64".%"PRIu64" secs\n",
                                             getpid(),  et/1000000, et%1000000);
     fprintf(stderr, "<|------------------------------|>\n");
   } else {
@@ -1507,7 +1571,7 @@ int main(int argc, char **argv)
       fprintf(stderr, "starttls-no-support-count: %d |",
                                               stats.starttls_no_support_count);
     }
-    fprintf(stderr, "elapsed-time: %llu.%llu secs\n", et/1000000, et%1000000);
+    fprintf(stderr, "elapsed-time: %"PRIu64".%"PRIu64" secs\n", et/1000000, et%1000000);
   }
 
   if (stats.timeout_count == stats.dnscount) {
