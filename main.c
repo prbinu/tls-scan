@@ -248,7 +248,7 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 
   // https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
   // if no ciphers, then set NULL
-  if (!SSL_set_cipher_list(ssl, (strlen(op.cipher_list) == 0) ? "NULL": op.cipher_list)) {
+  if (!SSL_set_cipher_list(ssl, (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
       fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, skipping..",
                                                     cli->cipher_index, cipher);
       SSL_free(ssl);
@@ -297,7 +297,7 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
   //SSL_CTX_set_info_callback(ssl_ctx, apps_ssl_info_callback);
 
   if (!SSL_CTX_set_cipher_list(ssl_ctx,
-                    (strlen(op.cipher_list) == 0) ? "NULL": op.cipher_list)) {
+                    (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
       fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
       exit(EXIT_FAILURE);
   }
