@@ -569,6 +569,7 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   }
 
   fprintf(fp, "%.*s\"port\": %d,%c", FMT_INDENT(2), tls_cert->port, fmt);
+  fprintf(fp, "%.*s\"elapsedTime\": %d,%c", FMT_INDENT(2), tls_cert->elapsed_time_ms, fmt);
   fprintf(fp, "%.*s\"tlsVersion\": \"%s\",%c", FMT_INDENT(2),
                                                     tls_cert->tls_version, fmt);
   fprintf(fp, "%.*s\"cipher\": \"%s\",%c", FMT_INDENT(2), tls_cert->cipher, fmt);

@@ -125,8 +125,6 @@ typedef struct client {
   // TLS version support test index
   int tls_ver_index;
   struct tls_cert *tls_cert;
-  // to measure elapsed time
-  struct timeval start_time;
 } client_t;
 
 /* input file handle */

@@ -82,6 +82,10 @@ struct tls_cert {
   //unsigned char *ssl_session;
   // to keep track of cipher enum scan
   int reference_count;
+  // to measure elapsed time
+  struct timeval start_time;
+  // aggregate time per host
+  int elapsed_time_ms;
 };
 
 void ts_tls_cert_BIO_free(struct tls_cert *tls_cert);

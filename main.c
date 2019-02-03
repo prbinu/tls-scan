@@ -406,7 +406,7 @@ bool ts_client_init(client_t *cli)
   cli->tls_ver_index = -1;
   cli->event_error = TS_NO_ERR;
 
-  gettimeofday(&cli->start_time, NULL);
+  gettimeofday(&cli->tls_cert->start_time, NULL);
   ts_adapter_init(cli);
   return true;
 }
@@ -448,6 +448,12 @@ void ts_client_destroy(client_t * cli)
 
 void print_tls_cert(client_t *cli)
 {
+  struct timeval t;
+  gettimeofday(&t, NULL);
+
+  cli->tls_cert->elapsed_time_ms = (t.tv_sec - cli->tls_cert->start_time.tv_sec) * 1000 +
+                                   (t.tv_usec - cli->tls_cert->start_time.tv_usec)/1000;
+
   ts_tls_print_json(cli->tls_cert, cli->op->certlog_fp, cli->op->pretty);
 }
 

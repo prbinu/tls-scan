@@ -99,6 +99,8 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
   "host": "search.yahoo.com",
   "ip": "208.71.45.12",
   "port": 443,
+  "elapsedTime": 1600,
+  "tlsVersion": "TLSv1.2",
   "cipher": "ECDHE-RSA-AES128-GCM-SHA256 TLSv1.2 Kx=ECDH     Au=RSA  Enc=AESGCM(128) Mac=AEAD",
   "tempPublicKeyAlg": "ECDH prime256v1",
   "tempPublicKeySize": 256,
