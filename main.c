@@ -394,9 +394,12 @@ bool ts_client_init(client_t *cli)
     input = cli->host;
   }
 
-  if (ts_get_line_input(&in_handle, input, DEFAULT_HOSTLEN) == -1) {
+  char line[DEFAULT_HOSTLEN+5];
+  if (ts_get_line_input(&in_handle, line, DEFAULT_HOSTLEN) == -1) {
     return false;
   }
+
+  ts_parse_connect_target(line, input, OPT_STRLEN, &cli->port);
 
   ts_tls_cert_reset(cli->op->cert_obj_pool[cli->id]);
   cli->tls_cert = cli->op->cert_obj_pool[cli->id];
@@ -1096,7 +1099,7 @@ void print_usage()
   // deprecated, use --connect instead
   //printf("  %s\n", "-h  --host=<hostname>    Host to scan");
   //printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
-  printf("  %s\n", "    --starttls=<arg>     Options: smtp, mysql");
+  printf("  %s\n", "    --starttls=<arg>     Options: smtp, mysql, tls");
   printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
@@ -1258,7 +1261,7 @@ int main(int argc, char **argv)
     case 'P':
       op.protocol_adapter_index = ts_adapter_index(optarg);
       if (op.protocol_adapter_index < 0) {
-        fprintf(stderr, "Error: unknown --protocol option\n");
+        fprintf(stderr, "Error: unknown --starttls option\n");
         exit(EXIT_FAILURE);
       }
 
@@ -1406,7 +1409,7 @@ int main(int argc, char **argv)
     if (p) {
       op.protocol_adapter_index = ts_adapter_index(p);
     } else {
-      fprintf(stderr, "Error: specify --protocol option\n");
+      fprintf(stderr, "Error: specify --starttls option\n");
       exit(EXIT_FAILURE);
     }
   }
