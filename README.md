@@ -208,8 +208,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 |     Option     | Description |
 |----------------|-------------|
 -H  --help | Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
--c  --connect=\<arg\> | `host[:port]` to scan. By passing an additional flag `--ip`, the host value will be interpreted as an IP address.
--p  --port=\<arg\> | Destination TCP port. Default: `443`
+-c  --connect=\<arg\> | `target[:port]` to scan. target = {hostname, IPv4, [IPv6] }. IPv6 example: [::1]:443 (default port 443).
 --starttls=\<protocol\> | Specify the starttls protocol. Current options: `smtp` and `mysql`. If the flag is not provided, program will choose the protocol based on the given port. Port `443`, `465`, `993` and `995` defaults to `tls`. Port `25` and `587` uses starttls `smtp` by default. Port `3306` use `mysql` SSL.
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
@@ -227,7 +226,6 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 -f  --infile=\<file\> | Input file with domains or IPs. This is optional and by default the program accepts input from standard input (`stdin`).
 -o  --outfile=\<file\> | Output file where the result in JSON format is stored. The default is standard output (`stdout`).
 -n  --pretty | Pretty print; add newline (`\n`) between record fields.
--i  --ip | Treat input as IP address. The default is hostname.
 -N  --nameserver=\<ip\> | DNS resolver IPs to use and is an optional field. Multiple Namespace IP address can be passed. Format: `-N <ip1> -N <ip2> -N <ip3>..` In practice, DNS servers may have tight rate-limit in place.
 --ssl2 | Use only SSLv2 ciphers.
 --ssl3 | Use only SSLv3 ciphers.
@@ -258,4 +256,3 @@ The `tls-scan` binary can be found at `./ts-build-root_v1_3/bin`.
 
 ## Contributions
 Collaborators and pull requests are welcome!
-

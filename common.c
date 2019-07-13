@@ -79,17 +79,56 @@ void ts_get_ip(int fd, char *ipstr, size_t ipstr_len)
 
 }
 
+ts_address_family_t ts_address_family(const char *target)
+{
+  if (target[0] == '[') {
+    return TS_IPV6;
+  }
+
+  size_t len = strlen(target);
+  if (len == strspn(target, "0123456789.:")) {
+    return TS_IPV4;
+  }
+
+  return TS_HOSTNAME;
+}
+
 void ts_parse_connect_target(const char *target, char *host, size_t hlen, uint16_t *port)
 {
   size_t len = strlen(target);
-  for (int i=len-1; i>=0; i--) {
-    if (target[i] == ':') {
-      *port = strtol(target + i + 1, NULL, 10);
-      snprintf(host, hlen, "%.*s", i, target);
-      return;
-    }
+  // addr should be atleast 4 chars
+  if (len < 5) {
+    return;
   }
 
-  snprintf(host, OPT_STRLEN, "%s", target);
+  ts_address_family_t addr = ts_address_family(target);
+  switch (addr) {
+    case TS_HOSTNAME:
+    case TS_IPV4:
+      for (int i=len-1; i>=0; i--) {
+        if ((target[i] == ':') && (i+1 < len)) {
+          *port = strtol(target + i + 1, NULL, 10);
+          snprintf(host, hlen, "%.*s", i, target);
+          return;
+        }
+      }
+
+      snprintf(host, OPT_STRLEN, "%s", target);
+      break;
+
+    case TS_IPV6:
+      for (int i=len-1; i>=0; i--) {
+        if ((target[i] == ']') && (target[i+1] == ':') && (i+1 < len)) {
+          *port = strtol(target + i + 2, NULL, 10);
+          snprintf(host, hlen, "%.*s", i-1, target+1);
+          return;
+        }
+      }
+
+      snprintf(host, OPT_STRLEN, "%.*s", (int)len-2, target+1);
+      break;
+    default: break;
+  }
+
   return;
 }

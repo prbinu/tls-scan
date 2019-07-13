@@ -653,7 +653,8 @@ void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
   } else if (events & BEV_EVENT_TIMEOUT) {
     cli->event_error = TS_TIMEOUT;
     stats.timeout_count++;
-    fprintf(stderr, "host: %s; ip: %s; error: Timeout\n", cli->host, cli->ip);
+    fprintf(stderr, "host: %s; ip: %s; port: %d; error: Timeout\n", cli->host,
+                                                           cli->ip, cli->port);
 
   } else if (events & BEV_EVENT_READING) {
     stats.network_err_count++;
@@ -862,24 +863,34 @@ void ts_scan_tcp_connect_hostname(client_t * cli)
 void ts_scan_tcp_connect(client_t * cli)
 {
   int ret = 0;
-  struct sockaddr out;
   cli->bev = bufferevent_socket_new(cli->evbase, -1, BEV_OPT_CLOSE_ON_FREE);
   assert(cli->bev != NULL);
-  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb, ts_scan_tcp_connect_cb, cli);
 
+  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb, ts_scan_tcp_connect_cb, cli);
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
 
-  int outlen = sizeof(out);
-  char ip_port[DEFAULT_HOSTLEN];
-  // TODO check overflow
-  sprintf(ip_port, "%s:%d", cli->ip, cli->port);
-  evutil_parse_sockaddr_port(ip_port, &out, &outlen);
+  char ip_port[DEFAULT_HOSTLEN+8];
+  if (strstr(cli->ip, ":") == NULL) {
+    snprintf(ip_port, DEFAULT_HOSTLEN+8, "%s:%d", cli->ip, cli->port);
+  } else {
+    snprintf(ip_port, DEFAULT_HOSTLEN+8, "[%s]:%d", cli->ip, cli->port);
+  }
 
-  ret = bufferevent_socket_connect(cli->bev, &out, outlen);
+  struct sockaddr_storage ss;
+  int len = sizeof(ss);
+  memset(&ss, 0, sizeof(ss));
+
+  ret = evutil_parse_sockaddr_port(ip_port, (struct sockaddr *)&ss, &len);
   if (ret != 0) {
-    fprintf(stderr, "host: ; ip: %s; error: Failed to connect remote ip\n",
-                                                                      cli->ip);
+    fprintf(stderr, "error: Failed to parse remote ip:port: %s\n", ip_port);
+    cli->event_error = TS_CONN_ERR;
+    ts_scan_error(cli);
+  }
+
+  ret = bufferevent_socket_connect(cli->bev, (struct sockaddr *)&ss, len);
+  if (ret != 0) {
+    fprintf(stderr, "error: Failed to connect remote ip:port: %s\n", ip_port);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -934,7 +945,6 @@ void ts_scan_tls_connect_hostname(client_t * cli)
 void ts_scan_tls_connect(client_t * cli)
 {
   int ret = 0;
-  struct sockaddr out;
   SSL *ssl = ts_ssl_create(cli->ssl_ctx, cli);
   if (!ssl) {
     cli->event_error = TS_SSL_CREAT_ERR;
@@ -954,15 +964,27 @@ void ts_scan_tls_connect(client_t * cli)
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
 
-  int outlen = sizeof(out);
   char ip_port[DEFAULT_HOSTLEN+8];
-  snprintf(ip_port, DEFAULT_HOSTLEN+8, "%s:%d", cli->ip, cli->port);
-  evutil_parse_sockaddr_port(ip_port, &out, &outlen);
+  if (strstr(cli->ip, ":") == NULL) {
+    snprintf(ip_port, DEFAULT_HOSTLEN+8, "%s:%d", cli->ip, cli->port);
+  } else {
+    snprintf(ip_port, DEFAULT_HOSTLEN+8, "[%s]:%d", cli->ip, cli->port);
+  }
 
-  ret = bufferevent_socket_connect(cli->bev, &out, outlen);
+  struct sockaddr_storage ss;
+  int len = sizeof(ss);
+  memset(&ss, 0, sizeof(ss));
+
+  ret = evutil_parse_sockaddr_port(ip_port, (struct sockaddr *)&ss, &len);
   if (ret != 0) {
-    fprintf(stderr, "host: ; ip: %s; error: Failed to connect remote ip\n",
-                                                                      cli->ip);
+    fprintf(stderr, "error: Failed to parse remote ip:port: %s\n", ip_port);
+    cli->event_error = TS_CONN_ERR;
+    ts_scan_error(cli);
+  }
+
+  ret = bufferevent_socket_connect(cli->bev, (struct sockaddr *)&ss, len);
+  if (ret != 0) {
+    fprintf(stderr, "error: Failed to connect remote ip:port: %s\n", ip_port);
     cli->event_error = TS_CONN_ERR;
     ts_scan_error(cli);
   }
@@ -992,7 +1014,7 @@ void ts_scan_connect(client_t *cli, bool ip_input)
 void ts_scan_parallel_host_scan(client_t *cli);
 
 /* parallel cipher and tls-version enum scan is enabled
-    only when --host cmdline option is used
+    only when --connect cmdline option is used
  */
 void ts_scan_parallel_host_scan(client_t *cli)
 {
@@ -1095,7 +1117,8 @@ void print_usage()
   printf("\n%s\n","With no options, program accepts hostnames from standard input, scans TLS");
   printf("%s\n","on port 443, and print results to standard output");
   printf("\n%s\n", "Options:");
-  printf("  %s\n", "-c  --connect=<arg>      Target host[:port] to connect (default port 443)");
+  printf("  %s\n", "-c  --connect=<arg>      Target[:port] to connect. Target = {hostname, IPv4, [IPv6] }");
+  printf("  %s\n", "                         IPv6 example: [::1]:443 (default port 443)");
   // deprecated, use --connect instead
   //printf("  %s\n", "-h  --host=<hostname>    Host to scan");
   //printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
@@ -1131,7 +1154,6 @@ void print_usage()
   printf("  %s\n", "-n  --pretty             Pretty print; add newline (\\n) between record fields");
   //printf("  %s\n", "-v   --verbose         verbose");
   printf("  %s\n", "-H  --help               help");
-  printf("  %s\n", "-i  --ip                 Treat input as IP address (default is hostname)");
   printf("  %s\n", "-N  --nameserver=<ip>    DNS resolver IPs, (eg. -N <ip1> -N <ip2> -N <ip3>..)");
   printf("  %s\n", "    --ssl2               SSLv2 ciphers");
   printf("  %s\n", "    --ssl3               SSLv3 ciphers");
@@ -1153,9 +1175,11 @@ void print_usage()
   printf("%s\n", "NOTE: If you pipe the output to another process, redirect stderr to /dev/null");
   printf("\n%s\n", "Examples:");
   printf("  %s\n", "% tls-scan -c smtp.mail.yahoo.com:587 \\");
-  printf("  %s\n", "              --starttls=smtp  --cacert=./cert.pem 2> /dev/null");
-  printf("  %s\n", "% tls-scan --infile=domains.txt --cacert=./cert.pem 2> /dev/null");
-  printf("  %s\n", "% cat domains.txt | tls-scan --port=443 --cacert=./cert.pem 2> /dev/null");
+  printf("  %s\n", "              --starttls=smtp  --cacert=ca-bundle.crt 2> /dev/null");
+  printf("  %s\n", "% tls-scan --infile=domains.txt --cacert=ca-bundle.crt 2> /dev/null");
+  printf("  %s\n", "% tls-scan -c [::1]:443 --cacert=ca-bundle.crt --pretty 2> /dev/null");
+  printf("  %s\n", "% tls-scan -c 10.10.10.10 --cacert=ca-bundle.crt --pretty 2> /dev/null");
+  printf("  %s\n", "% cat domains.txt | tls-scan --cacert=ca-bundle.crt 2> /dev/null");
   printf("\n");
 }
 
@@ -1216,7 +1240,6 @@ int main(int argc, char **argv)
     {"stdout", no_argument, 0, 'O'},
     {"pretty", no_argument, 0, 'n'},
     {"nameserver", required_argument, 0, 'N'},
-    {"ip", no_argument, 0, 'i'},
     {"meta-info", no_argument, 0, 'M'},
     {0, 0, 0, 0}
   };
@@ -1254,7 +1277,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456Q789VXnOijMH",
+                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456Q789VXnOjMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1273,7 +1296,12 @@ int main(int argc, char **argv)
       op.port = strtol(optarg, NULL, 10);
       break;
     case 'c':
-      ts_parse_connect_target(optarg, op.host, OPT_STRLEN, &op.port);
+      snprintf(op.host, OPT_STRLEN, "%s", optarg);
+      ts_address_family_t add = ts_address_family(optarg);
+      printf("address_family: %d\n", add);
+      if ((add == TS_IPV6) || (add == TS_IPV4)) {
+        op.ip_input = true;
+      }
       break;
     case 'C':
       snprintf(op.ciphers, OPT_CIPHER_STRLEN, "%s", optarg);
@@ -1339,9 +1367,6 @@ int main(int argc, char **argv)
       break;
     case 'n':
       op.pretty = true;
-      break;
-    case 'i':
-      op.ip_input = true;
       break;
     case 'V':
       op.tls_vers_enum = true;

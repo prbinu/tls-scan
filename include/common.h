@@ -21,6 +21,13 @@
 #define OPT_CIPHERSUITES_STRLEN 512
 #define CIPHER_ENUM_SZ 256
 
+typedef enum {
+  TS_ERROR = 0,
+  TS_HOSTNAME,
+  TS_IPV4,
+  TS_IPV6,
+} ts_address_family_t;
+
 struct tls_cert;
 
 typedef struct stats {
@@ -149,5 +156,8 @@ void ts_get_ip(int fd, char *ipstr, size_t ipstr_len);
 extern stats_t *ts_get_stats_obj();
 
 void ts_parse_connect_target(const char *target, char *host, size_t hlen, uint16_t *port);
+
+/* sniff the input to determine the input is hostname, ipv4 or ipv6 */
+ts_address_family_t ts_address_family(const char *target);
 
 #endif
