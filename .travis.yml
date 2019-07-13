@@ -8,7 +8,7 @@ os:
 compiler:
 - gcc
 script:
-- ./build-x86-64.sh
+- "./build-x86-64.sh"
 before_deploy:
 - mkdir -p $TRAVIS_BUILD_DIR/tls-scan/man/man1
 - cp $TRAVIS_BUILD_DIR/ts-build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan/tls-scan
@@ -18,8 +18,8 @@ before_deploy:
 deploy:
   provider: releases
   api_key:
-    secure: WvFteHvF84vke+cPXjtwCxLCgiVdOom9gG+KRkhJ2dpwX2Vovbbfo05eOj9CuqLdkK2e94YWz+rrhdgi83rLiLG0HqmrDfo0pCw5x708nWfOtANtN2Kg4BK7qEFBcK45x6RHJ2eW8WpEEgYc2IAMvwz6D0A9Z3Jt8sqFCeB9zmI9WTDDLxD1HZ2fLRzhP7iZmqcdGmZm2Uar/DCGa+HWGCmPdlJ5c2jrylIYTKrJ+G0N9Zpt46D9KpTV+Cpm52czg4lwk13aY2XW/TJoZLYl/qC4OrPLZ51vG/QIs7xk8y7/S2I3c9psmyuKI5dVZm2ac8j/hNBJ1gD+H/h/P32Aq7aV3Nmdca1oNCH1cGM4FbScJONUi/NIKZwI/TuSZEeHCXz4I8NjCttShjNvCKEEgUiJIh8KeTJuOW3XzYvw9UomusXwN466hEr0ugCAv03zOQVUCRR03i4VpmtNRkeCNLyS+ej7Hf8oHMY9EIjog3wCEShF+zuONL7a9yuvBry1PJD88+FyFiuTXlTi+kZFqNrpzORmG6AwU8Sv7myxHWE/FO9l+QNFFGc9rSTPIn4kdVxgNuzrG4xqxCKvaVhXLi72jKZVrfU4ZeQJ30MDeTnuj5Dh+LzWnTkJQkZl4Mj0NQyH4GbQsff7UxvZLnG1O87B3vdAj3rLUo009dfXtgQ=
-  file: "tls-scan-$TRAVIS_OS_NAME.tar.gz"
+    secure: n2QhVYiWUZqNxx/jmq4rCLgEjZYvr5M6I6fZ5/Sr4aCIOlIRNtrm1Z+cmUxmrEoP3TCmFHXOWV1kjTKSphVZDPzOlFALaY4VMUoTUCNwcVMTrYAgYnaLagXozGDEkWqYcGvyTXir1PQ9+Yk1dkUqbHgHV1BmccYSO97tBQkFcAGMdpcqto0pjQsbf554ILtjZF4ssCyDQNYLeWsuA8tF0pnEwJgUlQDpPn861vAaqInw/DvoKlGfkKWznoiYifpI0R1XqfdYdCmf/X/gqgfBkcHox6E0Q293SLbNLJUVtO1pfozurj+bQopHZ6+I4oaS8G/MxlH0TO/63pEu/TY/VE4OKdMFu/3zJFmpChvA+RFH2/fkAcqgx6yOIHFj0R3XONRSUU0coAxgfm9MS6DbrluquqYIl+7uTyAvWrq84r1Ef4Yd4MgCiIqMfqcA78sRqW9o9/e5EGsrKNpX8HgSriCN4KziOauqf1mhVgiM1eeY10h6onA1Pw1nemx9R++jpET4frIU0VNNBYMn5gdhQr7vxcROs0GmGpmG8B1/a8kjlTWCnD3ZdWo+YAJ1gd3UeosHaJyOmvlOmFP9x1/EvYjVgluC3+WS/+F6f/l/NKfWenzG5wXCu4fKYpyRJcPM5IeOyd1OqFRzzsoB/Toc1m/k44/Mu3POTFS096CsTw8=
+  file: tls-scan-$TRAVIS_OS_NAME.tar.gz
   skip_cleanup: true
   on:
     repo: prbinu/tls-scan
