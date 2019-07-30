@@ -1298,7 +1298,6 @@ int main(int argc, char **argv)
     case 'c':
       snprintf(op.host, OPT_STRLEN, "%s", optarg);
       ts_address_family_t add = ts_address_family(optarg);
-      printf("address_family: %d\n", add);
       if ((add == TS_IPV6) || (add == TS_IPV4)) {
         op.ip_input = true;
       }
