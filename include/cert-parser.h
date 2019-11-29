@@ -18,6 +18,10 @@
 
 /* ssl2, ssl3, tls1, tls1_1, tls1_2 tls1_3*/
 #define MAX_TLS_VERSION 6
+/* openssl scans upto tls1_2. The new version is scanned using gnutls */
+#define MAX_OPENSSL_TLS_VERSION 5
+/* used in gnutls13.c */
+#define TLS1_3_MAX_CIPHER_COUNT 5
 
 enum TLSVersion {
     SSLv2 = 0,
@@ -73,11 +77,12 @@ struct tls_cert {
   char verify_cert_errmsg[TS_ERRMSG_LEN];
   bool verify_host;
   char verify_host_errmsg[TS_ERRMSG_LEN];
-
   struct x509_cert x509[CERT_CHAIN_MAXLEN];
   BIO *san;
   bool tls_ver_support[MAX_TLS_VERSION];
+  bool tls1_3_ver_support;
   bool *cipher_suite_support;
+  bool cipher1_3_suite_support[TLS1_3_MAX_CIPHER_COUNT]; // tls 1.3 ciphers
   SSL_SESSION *session;
   //unsigned char *ssl_session;
   // to keep track of cipher enum scan

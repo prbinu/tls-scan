@@ -30,6 +30,9 @@
 #include <common.h>
 #include <cert-parser.h>
 
+extern void gnutls13_init();
+extern int gnutls13_scan(client_t *cli);
+extern void gnutls13_deinit();
 /*
  * openssl tutorial: http://www.linuxjournal.com/article/5487?page=0,1http://www.linuxjournal.com/article/5487?page=0,1s
  */
@@ -454,6 +457,8 @@ void print_tls_cert(client_t *cli)
   struct timeval t;
   gettimeofday(&t, NULL);
 
+  gnutls13_scan(cli);
+
   cli->tls_cert->elapsed_time_ms = (t.tv_sec - cli->tls_cert->start_time.tv_sec) * 1000 +
                                    (t.tv_usec - cli->tls_cert->start_time.tv_usec)/1000;
 
@@ -468,7 +473,7 @@ scan_type_t ts_scan_type(const client_t *cli)
     return ST_SESSION_REUSE;
   }
 
-  if ((cli->tls_ver_index >= 0) && (cli->tls_ver_index < MAX_TLS_VERSION)) {
+  if ((cli->tls_ver_index >= 0) && (cli->tls_ver_index < MAX_OPENSSL_TLS_VERSION)) {
     return ST_TLS_VERSION;
   }
 
@@ -506,14 +511,14 @@ scan_type_t ts_scan_next(client_t *cli)
   }
 
   // tls-version enum?
-  if ((cli->op->tls_vers_enum) && (cli->tls_ver_index+1 < MAX_TLS_VERSION)) {
+  if ((cli->op->tls_vers_enum) && (cli->tls_ver_index+1 < MAX_OPENSSL_TLS_VERSION)) {
     cli->tls_ver_index++;
     nanosleep(&cli->op->ts_sleep, NULL);
     return ST_TLS_VERSION;
   }
 
   // TODO need to make this better
-  if (cli->tls_ver_index < MAX_TLS_VERSION) {
+  if (cli->tls_ver_index < MAX_OPENSSL_TLS_VERSION) {
     cli->tls_ver_index++;
   }
 
@@ -1022,7 +1027,7 @@ void ts_scan_parallel_host_scan(client_t *cli)
     int i = 0;
 
     if (cli->op->tls_vers_enum) {
-      for (i = 0; i < MAX_TLS_VERSION; i++) {
+      for (i = 0; i < MAX_OPENSSL_TLS_VERSION; i++) {
         client_t *c = ts_client_create(cli->evbase, cli->dnsbase, cli->ssl_ctx,
                                                     cli->op, client_count + i);
         strcpy(c->host, cli->host);
@@ -1253,6 +1258,7 @@ int main(int argc, char **argv)
   strcpy(op.ciphers, default_ciphers);
   op.certlog_fp = stdout;
   op.ip_input = false;
+  op.cipher_user_input = false;
   op.cipher_enum = false;
   op.cipher_enum_count = 0;
   op.show_unsupported_ciphers = false;
@@ -1303,6 +1309,7 @@ int main(int argc, char **argv)
       }
       break;
     case 'C':
+      op.cipher_user_input = true;
       snprintf(op.ciphers, OPT_CIPHER_STRLEN, "%s", optarg);
       break;
     case 'e':
@@ -1522,6 +1529,7 @@ int main(int argc, char **argv)
     }
   }
 
+  gnutls13_init(&op);
   //event_enable_debug_logging(EVENT_DBG_ALL);
   for (i = 0; i < op.batch_size; i++) {
     client_t *c = ts_client_create(evbase, dnsbase, ssl_ctx, &op, i);
@@ -1532,6 +1540,8 @@ int main(int argc, char **argv)
   evdns_base_free(dnsbase, 0);
   event_base_free(evbase);
   ts_ssl_destroy(ssl_ctx);
+
+  gnutls13_deinit();
 
   for (i = 0; i < op.batch_size; i++) {
     free(op.cert_obj_pool[i]->cipher_suite_support);
