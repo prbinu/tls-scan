@@ -1,5 +1,3 @@
-/* This google code is placed in the public domain. */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -75,17 +73,20 @@ void gnutls13_init(struct options *op) {
   if (op->cipher_enum) {
     // if cipher is provided by the user, select only the chosen tls1.3 ciphers
     if (op->cipher_user_input) {
-      for (int i=0; i<TLS1_3_MAX_CIPHER_COUNT; i++) {
+      for (int i = 0; i < TLS1_3_MAX_CIPHER_COUNT; i++) {
         if (strstr(op->ciphers, tlsv1_3_openssl_ciphers[i]) != NULL) {
           strcpy(op->cipher1_3_enum_list[op->cipher1_3_enum_count], tlsv1_3_gnutls_ciphers[i]);
           op->cipher1_3_enum_count++;
         }
       }
-    } else {
-      // select all tls 1.3 ciphers
-      for (int i=0; i<TLS1_3_MAX_CIPHER_COUNT; i++) {
-        strcpy(op->cipher1_3_enum_list[op->cipher1_3_enum_count], tlsv1_3_gnutls_ciphers[i]);
-        op->cipher1_3_enum_count++;
+    } else if ((!op->ssl2) && (!op->ssl3) && (!op->tls1)) {
+      // select all tls 1.3 ciphers that matches
+      for (int i = 0; i < TLS1_3_MAX_CIPHER_COUNT; i++) {
+      //  for (int j = 0; j < opt->cipher_enum_count; j++) {
+      //    if (strcmp(op.cipher_enum_list[j], tlsv1_3_openssl_ciphers[i]) == 0) {
+            strcpy(op->cipher1_3_enum_list[op->cipher1_3_enum_count], tlsv1_3_gnutls_ciphers[i]);
+            op->cipher1_3_enum_count++;
+      //    }
       }
     }
 
@@ -112,7 +113,7 @@ void gnutls13_init(struct options *op) {
 }
 
 int gnutls13_scan(client_t *cli) {
-  if (cli->op->tls_vers_enum) {
+  if ((cli->op->tls_vers_enum) && (!cli->op->ssl2) && (!cli->op->ssl3) && (!cli->op->tls1)) {
     cli->tls_cert->tls1_3_ver_support = false;
     if (_gnutls13_scan(cli, tlsv1_3_gnutls_ciphers_str)) {
       cli->tls_cert->tls1_3_ver_support = true;

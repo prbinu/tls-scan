@@ -1494,12 +1494,12 @@ int main(int argc, char **argv)
       if (p == NULL) break;
       // these ciphers are causing core dumps, skipping it for now
       if ((strncmp(p, "SRP", 3)) &&
-          (strncmp(p, "PSK", 3)) &&
-          (strncmp(p, "RC2", 3)) &&
-          (strncmp(p, "DES-CBC3-MD5", 12)) &&
-          (strncmp(p, "RC4-64-MD5", 10)) &&
-          (strncmp(p, "DES-CBC-MD5", 11)) &&
-          (strncmp(p, "IDEA", 4))) {
+    //      (strncmp(p, "IDEA", 4)) &&
+    //      (strncmp(p, "RC2", 3)) &&
+    //      (strncmp(p, "DES-CBC3-MD5", 12)) &&
+    //      (strncmp(p, "RC4-64-MD5", 10)) &&
+    //      (strncmp(p, "DES-CBC-MD5", 11)) &&
+          (strncmp(p, "PSK", 3))) {
         strcpy(op.cipher_enum_list[op.cipher_enum_count++], p);
         //fprintf(stderr, "%s", p);
 
