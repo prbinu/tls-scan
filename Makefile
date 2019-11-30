@@ -21,12 +21,12 @@ src = $(wildcard *.c)
 obj = $(src:.c=.o)
 
 CC = gcc
-CFLAGS= -I./include -I ${TS_DEPDIR}/include `pkg-config gnutls --cflags` -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEPDIR}/lib -D_GNU_SOURCE
+CFLAGS= -I./include -I ${TS_DEPDIR}/include -I ${TS_DEPDIR}/include -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEPDIR}/lib -D_GNU_SOURCE
 
-LDFLAGS = -L ${TS_DEPDIR}/lib -L ${TS_DEPDIR}/lib -lssl -L ${TS_DEPDIR}/lib -lcrypto -L ${TS_DEPDIR}/lib -levent -L ${TS_DEPDIR}/lib -levent_openssl -ldl -lpthread $(libdep_$(shell uname -s)) `pkg-config gnutls --libs`
+LDFLAGS = -L ${TS_DEPDIR}/lib -lssl -L ${TS_DEPDIR}/lib -lcrypto -L ${TS_DEPDIR}/lib -levent -L ${TS_DEPDIR}/lib -levent_openssl -L ${TS_DEPDIR}/lib -lgnutls -L ${TS_DEPDIR}/lib -lhogweed -L ${TS_DEPDIR}/lib -lnettle -ldl -lpthread $(libdep_$(shell uname -s))
 
 libdep_Linux = -L ${TS_DEPDIR}/lib -lz -lrt
-libdep_Darwin = -lz 
+libdep_Darwin = -lz -framework Security -framework CoreFoundation
 
 tls-scan: $(obj)
 	$(CC) -o $@ $^ $(LDFLAGS)

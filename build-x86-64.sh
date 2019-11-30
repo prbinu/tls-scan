@@ -106,6 +106,33 @@ fi
 make
 make install prefix=${OUTDIR}
 
+echo "Downloading nettle_3.5.1."
+cd ${BUILDDIR}/downloads
+curl -OL https://git.lysator.liu.se/nettle/nettle/-/archive/nettle_3.5.1_release_20190627/nettle-nettle_3.5.1_release_20190627.tar.gz
+
+cd ${BUILDDIR}/build
+tar -zxvf ${BUILDDIR}/downloads/nettle-nettle_3.5.1_release_20190627.tar.gz
+cd nettle-nettle_3.5.1_release_20190627
+./.bootstrap
+./configure --disable-openssl --disable-shared  --disable-documentation --enable-mini-gmp
+make && make install prefix=${OUTDIR}
+
+echo "Downloading gnutls_3.6.10."
+cd ${BUILDDIR}/downloads
+curl -OL https://www.gnupg.org/ftp/gcrypt/gnutls/v3.6/gnutls-3.6.10.tar.xz
+
+cd ${BUILDDIR}/build
+tar -xvf ${BUILDDIR}/downloads/gnutls-3.6.10.tar.xz
+cd gnutls-3.6.10
+
+if [ "${OS}" == "Darwin" ]; then
+  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no NETTLE_CFLAGS="-I${OUTDIR}/include -arch x86_64 " NETTLE_LIBS="-L${OUTDIR}/lib -lhogweed -L${OUTDIR}/lib -lnettle" --prefix=$OUTDIR
+else
+  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR
+fi
+
+make && make install prefix=${OUTDIR}
+
 FILE="${BUILDDIR}/downloads/master.zip"
 if [ ! -f $FILE ]; then
   echo "Downloading $FILE.."
