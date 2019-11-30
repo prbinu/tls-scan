@@ -457,7 +457,11 @@ void print_tls_cert(client_t *cli)
   struct timeval t;
   gettimeofday(&t, NULL);
 
-  gnutls13_scan(cli);
+  // temporarily disabled for non-tls protocols TODO - enable!
+  const char *prot = ts_protocol_name(cli->op->protocol_adapter_index);
+  if ((prot) && (!strcmp(prot, "tls"))) {
+    gnutls13_scan(cli);
+  }
 
   cli->tls_cert->elapsed_time_ms = (t.tv_sec - cli->tls_cert->start_time.tv_sec) * 1000 +
                                    (t.tv_usec - cli->tls_cert->start_time.tv_usec)/1000;

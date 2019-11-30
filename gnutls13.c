@@ -40,7 +40,7 @@ static bool _gnutls13_scan(client_t *cli, const char *priority);
 
 extern int tcp_connect(const char *target, uint16_t port)
 {
-  int err, sd;
+  int err, sd = -1;
   struct sockaddr_in sa;
 
   sd = socket(AF_INET, SOCK_STREAM, 0);
@@ -51,8 +51,7 @@ extern int tcp_connect(const char *target, uint16_t port)
 
   err = connect(sd, (struct sockaddr *) &sa, sizeof(sa));
   if (err < 0) {
-    fprintf(stderr, "Connect error\n");
-    exit(1);
+    fprintf(stderr, "Connect error: target: %s:%d\n", target, port);
   }
 
   return sd;
@@ -82,19 +81,16 @@ void gnutls13_init(struct options *op) {
     } else if ((!op->ssl2) && (!op->ssl3) && (!op->tls1)) {
       // select all tls 1.3 ciphers that matches
       for (int i = 0; i < TLS1_3_MAX_CIPHER_COUNT; i++) {
-      //  for (int j = 0; j < opt->cipher_enum_count; j++) {
-      //    if (strcmp(op.cipher_enum_list[j], tlsv1_3_openssl_ciphers[i]) == 0) {
-            strcpy(op->cipher1_3_enum_list[op->cipher1_3_enum_count], tlsv1_3_gnutls_ciphers[i]);
-            op->cipher1_3_enum_count++;
-      //    }
+        strcpy(op->cipher1_3_enum_list[op->cipher1_3_enum_count], tlsv1_3_gnutls_ciphers[i]);
+        op->cipher1_3_enum_count++;
       }
     }
 
   }
 
   if (gnutls_check_version("3.4.6") == NULL) {
-          fprintf(stderr, "GnuTLS 3.4.6 or later is required for this google\n");
-          exit(1);
+    fprintf(stderr, "GnuTLS 3.4.6 or later is required for this google\n");
+    exit(1);
   }
 
   CHECK(gnutls_global_init());
@@ -147,15 +143,18 @@ bool _gnutls13_scan(client_t *cli, const char *priority) {
 
   // put the x509 credentials to the current session
   CHECK(gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, xcred));
-      /*  if (cli->host[0] != 0) {
-        //  gnutls_session_set_verify_cert(session, cli->host, 0);
-          CHECK(gnutls_server_name_set(session, GNUTLS_NAME_DNS, cli->host, strlen(cli->host)));
-        } else {
-          gnutls_session_set_verify_cert(session, NULL, 0);
-        }*/
-        /* connect to the peer
-         */
+  /*  if (cli->host[0] != 0) {
+    //  gnutls_session_set_verify_cert(session, cli->host, 0);
+      CHECK(gnutls_server_name_set(session, GNUTLS_NAME_DNS, cli->host, strlen(cli->host)));
+    } else {
+      gnutls_session_set_verify_cert(session, NULL, 0);
+    }*/
+    /* connect to the peer
+     */
   sd = tcp_connect(cli->ip, cli->port);
+  if (sd == -1) {
+    goto end;
+  }
   gnutls_transport_set_int(session, sd);
   gnutls_handshake_set_timeout(session, GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
 
@@ -170,27 +169,29 @@ bool _gnutls13_scan(client_t *cli, const char *priority) {
       type = gnutls_certificate_type_get(session);
       status = gnutls_session_get_verify_cert_status(session);
       CHECK(gnutls_certificate_verification_status_print(status, type, &out, 0));
-      printf("cert verify output: %s\n", out.data);
+      //printf("cert verify output: %s\n", out.data);
       gnutls_free(out.data);
     }
 
-    fprintf(stderr, "*** Handshake failed: %s\n", gnutls_strerror(ret));
+    //fprintf(stderr, "*** Handshake failed: %s\n", gnutls_strerror(ret));
 
   } else {
     desc = gnutls_session_get_desc(session);
-    printf("- Session info: %s\n", desc);
+    //printf("- Session info: %s\n", desc);
     gnutls_free(desc);
     gnutls_bye(session, GNUTLS_SHUT_RDWR);
     status = true;
   }
 
   tcp_close(sd);
+end:
   gnutls_deinit(session);
   return status;
 }
 
-void gnutls13_deinit() {
-        gnutls_certificate_free_credentials(xcred);
-        gnutls_global_deinit();
-        return;
+void gnutls13_deinit()
+{
+  gnutls_certificate_free_credentials(xcred);
+  gnutls_global_deinit();
+  return;
 }
