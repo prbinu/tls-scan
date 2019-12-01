@@ -72,11 +72,14 @@ typedef struct options {
   char cacert[OPT_STRLEN];
   char sni[DEFAULT_HOSTLEN];
   char ciphers[OPT_CIPHER_STRLEN];
+  bool cipher_user_input; // user provided cipher flag
   bool cipher_enum;
   char cipher_enum_list[CIPHER_ENUM_SZ][64];
   int cipher_enum_count;
   char cipher_list[OPT_CIPHER_STRLEN]; // pre-TLS1.3 ciphers
   char ciphersuites[OPT_CIPHERSUITES_STRLEN]; // TLS1.3 ciphers
+  char cipher1_3_enum_list[CIPHER_ENUM_SZ][64]; // gnutls tls 1.3 ciphers
+  int cipher1_3_enum_count; // gnutls tls 1.3 scan cipher count
   bool show_unsupported_ciphers;
   bool tls_vers_enum;
   bool no_parallel_enum;

@@ -8,13 +8,15 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 
 ## Features
 
+* **New: Support for TLSv1.3**
+* Can detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
 * Extract X.509 certificate from the server and print it in JSON format
 * Certificate and host name verification checks
 * Cipher and TLS version enumeration
 * TLS compression checks
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
-* Support TLS, SMTP STARTTLS and MYSQL protocols
+* Support TLS, STARTTLS SMTP and MYSQL protocols
 * Can operate at scale with the ability to concurrently scan large number of servers
 * Can be easily combined with other tools to analyze the scan results
 
@@ -30,7 +32,7 @@ Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://gith
 
 ### Build From Source
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl) and [`libevent`](https://github.com/libevent/libevent), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately five minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
 
 *Build Pre-requisites* :
 
@@ -240,19 +242,14 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 ## Caveats
 
-* The openssl fork we use doesn't support new CHACHA ciphers (yet). Here is the tracking issue: https://github.com/PeterMosmans/openssl/issues/38
-* The following ciphers are currently disabled: ```SRP:PSK:RC2:DES-CBC3-MD5:RC4-64-MD5:DES-CBC-MD5:IDEA```
-* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2)
+* The openssl fork we use doesn't support TLS 1.2 CHACHA ciphers (tracking issue: [#38](https://github.com/PeterMosmans/openssl/issues/38)). However CHACHA ciphers works with our TLS 1.3 version scan.
+* The following ciphers are currently disabled: ```SRP:PSK```
+* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
+* The TLS 1.3 scans are not asynchronous yet. Since the number of supported ciphers is in low single-digits, the performance impact is minimal. 
+* TLS 1.3 is not enabled for STARTTLS protocols yet.
 
-## CHACHA20_POLY1305 and  TLS-1.3 Support
-
-```sh
-% ./build-x86-64-openssl-1.1.1.sh
-```
-
-The `tls-scan` binary can be found at `./ts-build-root_v1_3/bin`.
-
-`tls-scan` built with openssl-1.1.1 only supports latest ciphers. It cannot be used to enumerate SSLv2 or EXP ciphers. This is less than optimal solution, but as a workaround you may use tls-scan+openssl-1.1.1 for scanning latest ciphers and use tls-scan for scanning old ciphers and SSL versions. The results may combine using json tools.
+## TLS 1.3 Support
+To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same prcoess space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used to scan SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2. GnuTLS is used for TLSv1.3.
 
 ## Contributions
 Collaborators and pull requests are welcome!

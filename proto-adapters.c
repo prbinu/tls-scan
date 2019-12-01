@@ -83,6 +83,16 @@ extern void ts_scan_do_tls_handshake(client_t * cli);
 extern void ts_scan_tcp_write(client_t * cli, const unsigned char *data,
                                                               size_t data_len);
 
+const char *ts_protocol_name(int adapter_index)
+{
+  size_t count = sizeof(adapters) / sizeof(adapters[0]);
+  if ((adapter_index>= 0) && (adapter_index < count)) {
+    return adapters[adapter_index].protocol;
+  }
+
+  return NULL;
+}
+
 int ts_adapter_index(const char *proto_name)
 {
 

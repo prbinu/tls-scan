@@ -7,6 +7,8 @@
 
 #include <common.h>
 
+/* returns protocol name if found, else return NULL */
+const char *ts_protocol_name(int adapter_index);
 /*
  * returns ts_adapter table index for supported protocols
  * returns -1 if the proto_name is NOT found in the ts_adapters table
