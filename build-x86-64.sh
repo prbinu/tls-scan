@@ -114,7 +114,7 @@ cd ${BUILDDIR}/build
 tar -zxvf ${BUILDDIR}/downloads/nettle-nettle_3.5.1_release_20190627.tar.gz
 cd nettle-nettle_3.5.1_release_20190627
 ./.bootstrap
-./configure --enable-static --enable-mini-gmp --disable-openssl --disable-shared --disable-documentation LDFLAGS="-L ${OUTDIR}/lib"
+./configure --enable-static --enable-mini-gmp --disable-openssl --disable-shared --disable-documentation LDFLAGS="-L${OUTDIR}/lib"
 make && make install prefix=${OUTDIR}
 
 echo "Downloading gnutls_3.6.10."
@@ -126,9 +126,9 @@ tar -xvf ${BUILDDIR}/downloads/gnutls-3.6.10.tar.xz
 cd gnutls-3.6.10
 
 if [ "${OS}" == "Darwin" ]; then
-  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig LDFLAGS="-L ${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include -arch x86_64" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include -arch x86_64 "  HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed"
+  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig LDFLAGS="-L${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include -arch x86_64" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include -arch x86_64 "  HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed"
 else
-  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig LDFLAGS="-L ${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include"  HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed"
+  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig LDFLAGS="-L${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include"  HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed"
 fi
 
 make && make install prefix=${OUTDIR}
