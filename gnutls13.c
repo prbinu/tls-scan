@@ -120,7 +120,6 @@ int gnutls13_scan(client_t *cli) {
   char priority[512];
   for (int i = 0; i < cli->op->cipher1_3_enum_count; i++) {
     snprintf(priority, 512, "NONE:+CTYPE-ALL:+COMP-ALL:+GROUP-ALL:+SIGN-ALL:+KX-ALL:+MAC-ALL:+VERS-TLS1.3:+%s", cli->op->cipher1_3_enum_list[i]);
-    printf("%s\n", priority);
     if (_gnutls13_scan(cli, priority)) {
       cli->tls_cert->cipher1_3_suite_support[i] = true;
     }
@@ -143,6 +142,8 @@ bool _gnutls13_scan(client_t *cli, const char *priority) {
 
   // put the x509 credentials to the current session
   CHECK(gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE, xcred));
+  // TODO
+  // if (cli->op->sni[0] != 0) {
   /*  if (cli->host[0] != 0) {
     //  gnutls_session_set_verify_cert(session, cli->host, 0);
       CHECK(gnutls_server_name_set(session, GNUTLS_NAME_DNS, cli->host, strlen(cli->host)));
