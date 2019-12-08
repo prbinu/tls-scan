@@ -15,11 +15,15 @@
 #include <openssl/bio.h>
 #include <openssl/err.h>
 
+#include <gnutls/gnutls.h>
+
 #define DEFAULT_HOSTLEN 256
 #define OPT_STRLEN 256
 #define OPT_CIPHER_STRLEN 4092
 #define OPT_CIPHERSUITES_STRLEN 512
 #define CIPHER_ENUM_SZ 256
+#define SE_OPENSSL 0
+#define SE_GNUTLS 1
 
 typedef enum {
   TS_ERROR = 0,
@@ -49,14 +53,28 @@ typedef struct stats {
 void init_stats(stats_t *st);
 
 typedef enum {
-  TS_NO_ERR = 0,
+  TS_SUCCESS = 0,
   TS_TIMEOUT,
   TS_DNS_ERR,
   TS_HSHAKE_ERR,
   TS_CONN_ERR,
   TS_SSL_CREAT_ERR,
+  TS_EAGAIN_ERR,
   TS_UNKNOWN_ERR
-} ts_error_t;
+} ts_status_t;
+
+typedef enum {
+  ST_UNKNOWN_TYPE = 0,
+  ST_CERT,
+  ST_SESSION_REUSE,
+  ST_TLS_VERSION,
+  ST_CIPHER,
+  ST_HOST_PARALLEL,
+  ST_GNUTLS_CERT,
+  ST_GNUTLS_VERSION,
+  ST_GNUTLS_CIPHER,
+  ST_CERT_PRINT
+} scan_type_t;
 
 /* command line options, and related global consts */
 typedef struct options {
@@ -99,6 +117,8 @@ typedef struct options {
   int verbose;
   // if the input is IP
   bool ip_input;
+  // GnuTLS
+  gnutls_certificate_credentials_t xcred;
   // tls_cert objects
   struct tls_cert **cert_obj_pool;
 } options_t;
@@ -115,7 +135,7 @@ typedef struct client {
   struct bufferevent *temp_bev;
   //struct evutil_addrinfo *addr;
   // event status to determine error type
-  ts_error_t event_error;
+  ts_status_t event_status;
   SSL_CTX *ssl_ctx;
   // adapter index
   int adapter_index;
@@ -134,6 +154,16 @@ typedef struct client {
   int cipher_index;
   // TLS version support test index
   int tls_ver_index;
+  // tls 1.3+ cipher index
+  int cipher1_3_index;
+  // scan state
+  scan_type_t state;
+  // scan engine - openssl or gnutls
+  uint8_t scan_engine;
+  // GnuTLS 1.3 handshake event
+  struct event *handshake1_3_ev;
+  // GnuTLS 1.3 session
+  gnutls_session_t session;
   struct tls_cert *tls_cert;
 } client_t;
 

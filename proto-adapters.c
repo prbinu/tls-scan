@@ -82,6 +82,7 @@ extern void ts_scan_error(client_t * cli);
 extern void ts_scan_do_tls_handshake(client_t * cli);
 extern void ts_scan_tcp_write(client_t * cli, const unsigned char *data,
                                                               size_t data_len);
+extern void ts_scan_do_tls1_3_handshake(client_t *cli);
 
 const char *ts_protocol_name(int adapter_index)
 {
@@ -243,7 +244,11 @@ void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
 
   case 2:
     (*resp_index)++;
-    ts_scan_do_tls_handshake(cli);
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
     break;
 
   case 3:
@@ -317,7 +322,13 @@ void on_mysql_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
   if (0x0008 & (int16_t)(rbuf[index+3])) {
     ts_scan_tcp_write(cli, ssl_handshake_response,
                                        sizeof(ssl_handshake_response));
-    ts_scan_do_tls_handshake(cli);
+
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
+
   } else {
     fprintf(stderr, "host: %s; ip: %s; error: SSL NOT Supported\n",
                                                         cli->ip, cli->host);

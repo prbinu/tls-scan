@@ -605,17 +605,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     int i, j = 0;
     int vers[MAX_TLS_VERSION];
 
-    for (i = 0; i < MAX_OPENSSL_TLS_VERSION; i++) {
+    for (i = 0; i < MAX_TLS_VERSION; i++) {
       if (tls_cert->tls_ver_support[i]) {
         vers[j++] = i;
       }
     }
-
-    // include tls1_3
-    if (tls_cert->tls1_3_ver_support) {
-      vers[j++] = i;
-    }
-
 
 // workaround to supress SSLv2 if openssl version > 1.1.x
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
@@ -667,15 +661,15 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     if (s13 > 0) {
       for (i = 0; i < s13-1; i++) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
       }
 
       if (s > 0) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
       } else {
         fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
 
       }
     }
@@ -683,11 +677,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     if (s > 0) {
       for (i = 0; i < s-1; i++) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher_enum_list[supported[i]], fmt);
+                              op->cipher_enum_list[supported[i]], fmt);
       }
 
       fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                      op->cipher_enum_list[supported[i]], fmt);
+                              op->cipher_enum_list[supported[i]], fmt);
     }
 
     if (op->show_unsupported_ciphers) {
@@ -697,15 +691,15 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
       if (u13 > 0) {
         for (i = 0; i < u13-1; i++) {
           fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
         }
 
         if (u > 0) {
           fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
         } else {
           fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
 
         }
       }
@@ -733,11 +727,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   } else {
     fprintf(fp, "%.*s\"verifyCertResult\": false,%c", FMT_INDENT(2), fmt);
     fprintf(fp, "%.*s\"verifyCertError\": \"%s\",%c",
-                              FMT_INDENT(2), tls_cert->verify_cert_errmsg, fmt);
+                             FMT_INDENT(2), tls_cert->verify_cert_errmsg, fmt);
   }
 
   fprintf(fp, "%.*s\"verifyHostResult\": %s,%c",
-                        FMT_INDENT(2), bool_to_str(tls_cert->verify_host), fmt);
+                       FMT_INDENT(2), bool_to_str(tls_cert->verify_host), fmt);
 
   fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
                            bool_to_str(tls_cert->ocsp_stapling_response), fmt);

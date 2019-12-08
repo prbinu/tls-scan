@@ -80,7 +80,6 @@ struct tls_cert {
   struct x509_cert x509[CERT_CHAIN_MAXLEN];
   BIO *san;
   bool tls_ver_support[MAX_TLS_VERSION];
-  bool tls1_3_ver_support;
   bool *cipher_suite_support;
   bool cipher1_3_suite_support[TLS1_3_MAX_CIPHER_COUNT]; // tls 1.3 ciphers
   SSL_SESSION *session;

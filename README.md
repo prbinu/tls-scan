@@ -9,16 +9,16 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 ## Features
 
 * **New: Support for TLSv1.3**
-* Can detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
-* Extract X.509 certificate from the server and print it in JSON format
+* Detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
+* Extract X.509 certificate fields from the target server and print it in JSON format
 * Certificate and host name verification checks
 * Cipher and TLS version enumeration
 * TLS compression checks
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
 * Support TLS, STARTTLS SMTP and MYSQL protocols
-* Can operate at scale with the ability to concurrently scan large number of servers
-* Can be easily combined with other tools to analyze the scan results
+* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers
+* Script friendly output - Can be combined with other tools to analyze the scan results
 
 This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
@@ -245,11 +245,9 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 * The openssl fork we use doesn't support TLS 1.2 CHACHA ciphers (tracking issue: [#38](https://github.com/PeterMosmans/openssl/issues/38)). However CHACHA ciphers works with our TLS 1.3 version scan.
 * The following ciphers are currently disabled: ```SRP:PSK```
 * Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
-* The TLS 1.3 scans are not asynchronous yet. Since the number of supported ciphers is in low single-digits, the performance impact is minimal. 
-* TLS 1.3 is not enabled for STARTTLS protocols yet.
 
 ## TLS 1.3 Support
-To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same prcoess space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used to scan SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2. GnuTLS is used for TLSv1.3.
+To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same prcoess space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used for scanning SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2 and GnuTLS is used for TLSv1.3.
 
 ## Contributions
 Collaborators and pull requests are welcome!

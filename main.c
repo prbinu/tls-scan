@@ -30,9 +30,11 @@
 #include <common.h>
 #include <cert-parser.h>
 
-extern void gnutls13_init();
-extern int gnutls13_scan(client_t *cli);
-extern void gnutls13_deinit();
+extern void gnutls13_init(struct options *op);
+extern int gnutls13_session_init(client_t *cli, int sock_fd);
+extern ts_status_t gnutls13_handshake(client_t *cli, int sock_fd);
+extern void gnutls13_session_deinit(client_t *cli);
+extern void gnutls13_deinit(struct options *op);
 /*
  * openssl tutorial: http://www.linuxjournal.com/article/5487?page=0,1http://www.linuxjournal.com/article/5487?page=0,1s
  */
@@ -93,27 +95,29 @@ stats_t *ts_get_stats_obj()
   return &stats;
 }
 
-typedef enum {
-  ST_UNKNOWN_TYPE = 0,
-  ST_CERT,
-  ST_SESSION_REUSE,
-  ST_TLS_VERSION,
-  ST_CIPHER,
-  ST_HOST_PARALLEL,
-  ST_CERT_PRINT
-} scan_type_t;
-
 void global_init()
 {
 
 }
+
+/* TODO
+1. clean up -cipher, -ssl2.3, -tls1,2,3 options
+2. add more protocol support
+3. tls13 only scans
+4. convert tls1.3 cipher name to openssl compliant name
+5. implement ST_GNUTLS_CERT
+6. fix port bug
+7. GnuTLS cert verification
+8. Review and fix client object variable init (create/init functions)
+*/
 
 /* returns current scan type/state */
 scan_type_t ts_scan_type(const client_t *cli);
 
 // https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
 // seperate given ciphers into to TLS1.3 and pre-TLS1.3 cipher group
-void get_ciphersuites_and_cipher_list(const char *ciphers, char o_ciphersuites[], char o_cipher_list[])
+void get_ciphersuites_and_cipher_list(const char *ciphers,
+                                   char o_ciphersuites[], char o_cipher_list[])
 {
   char *c = NULL;
   char *c2 = strdup(ciphers);
@@ -251,7 +255,8 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 
   // https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
   // if no ciphers, then set NULL
-  if (!SSL_set_cipher_list(ssl, (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
+  if (!SSL_set_cipher_list(ssl,
+                (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
       fprintf(stderr, "%s %d %s\n", "SSL_set_cipher_list failed, skipping..",
                                                     cli->cipher_index, cipher);
       SSL_free(ssl);
@@ -300,7 +305,7 @@ SSL_CTX *ts_ssl_ctx_create(const char *ciphers, const char *cacert, bool ssl2)
   //SSL_CTX_set_info_callback(ssl_ctx, apps_ssl_info_callback);
 
   if (!SSL_CTX_set_cipher_list(ssl_ctx,
-                    (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
+                (strlen(op.cipher_list) == 0) ? "NO-CIPHER": op.cipher_list)) {
       fprintf(stderr, "%s\n", "SSL_CTX_set_cipher_list failed, exiting..");
       exit(EXIT_FAILURE);
   }
@@ -362,8 +367,9 @@ client_t *ts_client_create(struct event_base *evbase,
   cli->session_reuse_supported = false;
   cli->reuse_test_count = -1;
   cli->cipher_index = -1;
+  cli->cipher1_3_index = -1;
   cli->tls_ver_index = -1;
-  cli->event_error = TS_NO_ERR;
+  cli->event_status = TS_SUCCESS;
   cli->tls_cert = NULL;
   cli->bev = NULL;
   cli->temp_bev = NULL;
@@ -376,6 +382,7 @@ client_t *ts_client_create(struct event_base *evbase,
   cli->timeout = options->timeout;
   cli->op = options;
   cli->adapter_index = op.protocol_adapter_index;
+  cli->scan_engine = SE_OPENSSL;
 
   // call adapter create
   ts_adapter_create(cli);
@@ -409,8 +416,11 @@ bool ts_client_init(client_t *cli)
   cli->session_reuse_supported = false;
   cli->reuse_test_count = -1;
   cli->cipher_index = -1;
+  cli->cipher1_3_index = -1;
   cli->tls_ver_index = -1;
-  cli->event_error = TS_NO_ERR;
+  cli->event_status = TS_SUCCESS;
+  cli->state = ST_CERT;
+  cli->scan_engine = SE_OPENSSL;
 
   gettimeofday(&cli->tls_cert->start_time, NULL);
   ts_adapter_init(cli);
@@ -431,7 +441,7 @@ void ts_client_reset(client_t * cli)
     bufferevent_free(cli->bev);
     cli->bev = NULL;
     cli->temp_bev = NULL;
-    cli->event_error = TS_NO_ERR;
+    cli->event_status = TS_SUCCESS;
   }
 
   ts_adapter_reset(cli);
@@ -457,14 +467,9 @@ void print_tls_cert(client_t *cli)
   struct timeval t;
   gettimeofday(&t, NULL);
 
-  // temporarily disabled for non-tls protocols TODO - enable!
-  const char *prot = ts_protocol_name(cli->op->protocol_adapter_index);
-  if ((prot) && (!strcmp(prot, "tls"))) {
-    gnutls13_scan(cli);
-  }
-
-  cli->tls_cert->elapsed_time_ms = (t.tv_sec - cli->tls_cert->start_time.tv_sec) * 1000 +
-                                   (t.tv_usec - cli->tls_cert->start_time.tv_usec)/1000;
+  cli->tls_cert->elapsed_time_ms =
+                     (t.tv_sec - cli->tls_cert->start_time.tv_sec) * 1000 +
+                     (t.tv_usec - cli->tls_cert->start_time.tv_usec)/1000;
 
   ts_tls_print_json(cli->tls_cert, cli->op->certlog_fp, cli->op->pretty);
 }
@@ -472,26 +477,7 @@ void print_tls_cert(client_t *cli)
 /* returns the current scan type/state */
 scan_type_t ts_scan_type(const client_t *cli)
 {
-  if ((!cli->session_reuse_supported) && (cli->reuse_test_count >= 0) &&
-                        (cli->reuse_test_count < MAX_SESSION_REUSE_RETRY)) {
-    return ST_SESSION_REUSE;
-  }
-
-  if ((cli->tls_ver_index >= 0) && (cli->tls_ver_index < MAX_OPENSSL_TLS_VERSION)) {
-    return ST_TLS_VERSION;
-  }
-
-  if ((cli->tls_ver_index == -1) && (cli->cipher_index == -1) &&
-                                    (cli->reuse_test_count == -1)) {
-    return ST_CERT;
-  }
-
-  if ((cli->cipher_index >= 0) &&
-      (cli->cipher_index < cli->op->cipher_enum_count)) {
-    return ST_CIPHER;
-  }
-
-  return ST_UNKNOWN_TYPE;
+  return cli->state;
 }
 
 void ts_scan_parallel_host_scan(client_t *cli);
@@ -502,38 +488,64 @@ void ts_scan_parallel_host_scan(client_t *cli);
 */
 scan_type_t ts_scan_next(client_t *cli)
 {
+  // default scan engine. overridden for TLS 1.3+ scans
+  cli->scan_engine = SE_OPENSSL;
   if ((cli->op->session_reuse_test) && (!cli->session_reuse_supported) &&
       (cli->reuse_test_count+1 < MAX_SESSION_REUSE_RETRY)) {
     cli->reuse_test_count++;
+    cli->state = ST_SESSION_REUSE;
     return ST_SESSION_REUSE;
   }
 
   // parallelize cipher and tls-version enumerations
   if (((cli->op->tls_vers_enum) || (cli->op->cipher_enum)) &&
        (cli->op->host[0] != 0) && (!op.no_parallel_enum)) {
+    cli->state = ST_HOST_PARALLEL;
     return ST_HOST_PARALLEL;
   }
 
-  // tls-version enum?
-  if ((cli->op->tls_vers_enum) && (cli->tls_ver_index+1 < MAX_OPENSSL_TLS_VERSION)) {
-    cli->tls_ver_index++;
-    nanosleep(&cli->op->ts_sleep, NULL);
-    return ST_TLS_VERSION;
+  // tls-version enum scans
+  if (cli->op->tls_vers_enum) {
+    if (cli->tls_ver_index+1 < MAX_OPENSSL_TLS_VERSION) {
+      cli->tls_ver_index++;
+      nanosleep(&cli->op->ts_sleep, NULL);
+      cli->state = ST_TLS_VERSION;
+      return ST_TLS_VERSION;
+    }
+
+    // GnuTLS 1.3 scans
+    if (cli->tls_ver_index+1 < MAX_TLS_VERSION) {
+      cli->tls_ver_index++;
+      nanosleep(&cli->op->ts_sleep, NULL);
+      if ((!cli->op->ssl2) && (!cli->op->ssl3) && (!cli->op->tls1)) {
+        cli->scan_engine = SE_GNUTLS;
+        cli->state = ST_GNUTLS_VERSION;
+        return ST_GNUTLS_VERSION;
+      }
+    }
   }
 
-  // TODO need to make this better
-  if (cli->tls_ver_index < MAX_OPENSSL_TLS_VERSION) {
-    cli->tls_ver_index++;
+  // cipher enum scans
+  if (cli->op->cipher_enum) {
+    if (cli->cipher_index+1 < cli->op->cipher_enum_count) {
+      cli->cipher_index++;
+      // continue with same host/ip, but different cipher
+      nanosleep(&cli->op->ts_sleep, NULL);
+      cli->state = ST_CIPHER;
+      return ST_CIPHER;
+    }
+
+    if (cli->cipher1_3_index+1 < cli->op->cipher1_3_enum_count) {
+      cli->cipher1_3_index++;
+      nanosleep(&cli->op->ts_sleep, NULL);
+      cli->scan_engine = SE_GNUTLS;
+      cli->state = ST_GNUTLS_CIPHER;
+      return ST_GNUTLS_CIPHER;
+
+    }
   }
 
-  if ((cli->op->cipher_enum) &&
-      (cli->cipher_index < cli->op->cipher_enum_count)) {
-    cli->cipher_index++;
-    // continue with same host/ip, but different cipher
-    nanosleep(&cli->op->ts_sleep, NULL);
-    return ST_CIPHER;
-  }
-
+  cli->state = ST_CERT_PRINT;
   return ST_CERT_PRINT;
 }
 
@@ -590,6 +602,11 @@ void ts_scan_disconnect(client_t * cli)
       ts_scan_connect(cli, true);
       break;
 
+    case ST_GNUTLS_VERSION:
+    case ST_GNUTLS_CIPHER:
+      ts_scan_connect(cli, true);
+      break;
+
     case ST_CERT:
     case ST_CERT_PRINT:
     default:
@@ -608,7 +625,7 @@ void ts_scan_error(client_t * cli)
     if ((cli->cipher_index == -1) && (cli->tls_ver_index == -1) &&
                                              (cli->reuse_test_count == -1)) {
       stats.connect_err_count++;
-    } else if (cli->event_error == TS_HSHAKE_ERR) {
+    } else if (cli->event_status == TS_HSHAKE_ERR) {
       //continue with next cipher/tls-version scan
       ts_scan_disconnect(cli);
       return;
@@ -641,7 +658,7 @@ static int set_linger(int fd, int onoff, int linger)
 void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
                                                                 client_t *cli)
 {
-  cli->event_error = TS_HSHAKE_ERR;
+  cli->event_status = TS_HSHAKE_ERR;
 
   if (events & BEV_EVENT_ERROR) {
     int err;
@@ -660,7 +677,7 @@ void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
                      Disconnected from the remote host\n", cli->host, cli->ip);
 
   } else if (events & BEV_EVENT_TIMEOUT) {
-    cli->event_error = TS_TIMEOUT;
+    cli->event_status = TS_TIMEOUT;
     stats.timeout_count++;
     fprintf(stderr, "host: %s; ip: %s; port: %d; error: Timeout\n", cli->host,
                                                            cli->ip, cli->port);
@@ -748,7 +765,6 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
       break;
 
     default:
-      printf("SCAN TYPE UNKNOWN assert\n");
       assert(0);
       break;
     }
@@ -763,6 +779,69 @@ void ts_scan_tls_connect_cb(struct bufferevent *bev, short events, void *ptr)
   return;
 }
 
+void ts_scan_do_tls1_3_handshake_cb(evutil_socket_t fd, short event, void *ptr)
+{
+  client_t *cli = (client_t *) ptr;
+  assert(cli != NULL);
+
+  if (event == EV_READ) {
+    ts_status_t status = gnutls13_handshake(cli, fd);
+    if (status == TS_EAGAIN_ERR) {
+      const struct timeval timeout = { cli->timeout, 0 };
+      assert(cli->handshake1_3_ev != NULL);
+      event_add(cli->handshake1_3_ev, &timeout);
+      return;
+    }
+
+    if (status == TS_SUCCESS) {
+      stats.gross_tls_handshake++;
+    }
+
+    if (status == TS_HSHAKE_ERR) {
+      stats.network_err_count++;
+    }
+  }
+
+  if (event == EV_TIMEOUT) {
+    stats.timeout_count++;
+  }
+
+  if (cli->handshake1_3_ev) {
+    event_free(cli->handshake1_3_ev);
+  }
+
+  gnutls13_session_deinit(cli);
+  ts_scan_disconnect(cli);
+}
+
+/* TLS handshake on existing TCP session, used by protocol adapters */
+void ts_scan_do_tls1_3_handshake(client_t *cli)
+{
+  int fd;
+  fd = bufferevent_getfd(cli->temp_bev);
+  gnutls13_session_init(cli, fd);
+  ts_status_t status = gnutls13_handshake(cli, fd);
+  if (status == TS_EAGAIN_ERR) {
+    const struct timeval timeout = { cli->timeout, 0 };
+    cli->handshake1_3_ev = event_new(cli->evbase, fd, EV_TIMEOUT|EV_READ,
+                        ts_scan_do_tls1_3_handshake_cb, cli);
+    assert(cli->handshake1_3_ev != NULL);
+    event_add(cli->handshake1_3_ev, &timeout);
+    return;
+  }
+
+  if (status == TS_SUCCESS) {
+    stats.gross_tls_handshake++;
+  }
+
+  if (status == TS_HSHAKE_ERR) {
+    stats.network_err_count++;
+  }
+
+  gnutls13_session_deinit(cli);
+  ts_scan_disconnect(cli);
+}
+
 /* TLS handshake on existing TCP session, used by protocol adapters */
 void ts_scan_do_tls_handshake(client_t *cli)
 {
@@ -770,7 +849,7 @@ void ts_scan_do_tls_handshake(client_t *cli)
   SSL *ssl = NULL;
   ssl = ts_ssl_create(cli->ssl_ctx, cli);
   if (!ssl) {
-    cli->event_error = TS_SSL_CREAT_ERR;
+    cli->event_status = TS_SSL_CREAT_ERR;
     ts_scan_error(cli);
     return;
   }
@@ -784,7 +863,7 @@ void ts_scan_do_tls_handshake(client_t *cli)
   if (!bev_ssl) {
     fprintf(stderr, "host: %s; ip: %s; error: Bufferevent_openssl_new\n",
                                                            cli->host, cli->ip);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   } else {
     cli->bev = cli->temp_bev = bev_ssl;
@@ -838,8 +917,34 @@ void ts_scan_tcp_connect_cb(struct bufferevent *bev, short events, void *ptr)
     fd = bufferevent_getfd(bev);
     ts_get_ip(fd, cli->ip, sizeof(cli->ip));
 
-    bufferevent_enable(cli->bev, EV_READ | EV_WRITE);
-    ts_adapter_connect(cli);
+    // if tls >= 1.3
+    if ((cli->scan_engine == SE_GNUTLS) && (cli->adapter_index == 0)) {
+      gnutls13_session_init(cli, fd);
+      ts_status_t status = gnutls13_handshake(cli, fd);
+      if (status == TS_EAGAIN_ERR) {
+        const struct timeval timeout = { cli->timeout, 0 };
+        cli->handshake1_3_ev = event_new(cli->evbase, fd, EV_TIMEOUT|EV_READ,
+                                          ts_scan_do_tls1_3_handshake_cb, cli);
+        assert(cli->handshake1_3_ev != NULL);
+        event_add(cli->handshake1_3_ev, &timeout);
+        return;
+      }
+
+      if (status == TS_SUCCESS) {
+        stats.gross_tls_handshake++;
+      }
+
+      if (status == TS_HSHAKE_ERR) {
+        stats.network_err_count++;
+      }
+
+      gnutls13_session_deinit(cli);
+      ts_scan_disconnect(cli);
+    } else {
+      // starttls and tls < 1.3 scans
+      bufferevent_enable(cli->bev, EV_READ | EV_WRITE);
+      ts_adapter_connect(cli);
+    }
   } else {
     tls_scan_connect_error_handler(bev, events, cli);
     ts_scan_error(cli);
@@ -853,7 +958,8 @@ void ts_scan_tcp_connect_hostname(client_t * cli)
   cli->bev = bufferevent_socket_new(cli->evbase, -1, BEV_OPT_CLOSE_ON_FREE);
   assert(cli->bev != NULL);
 
-  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb, ts_scan_tcp_connect_cb, cli);
+  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb,
+                                                  ts_scan_tcp_connect_cb, cli);
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
 
@@ -863,7 +969,7 @@ void ts_scan_tcp_connect_hostname(client_t * cli)
   if (ret != 0) {
     fprintf(stderr, "host: %s; ip: %s; error: Failed to connect remote host\n",
                                                            cli->host, cli->ip);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 }
@@ -875,7 +981,8 @@ void ts_scan_tcp_connect(client_t * cli)
   cli->bev = bufferevent_socket_new(cli->evbase, -1, BEV_OPT_CLOSE_ON_FREE);
   assert(cli->bev != NULL);
 
-  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb, ts_scan_tcp_connect_cb, cli);
+  bufferevent_setcb(cli->bev, ts_scan_tcp_read_cb, ts_scan_tcp_write_cb,
+                                                  ts_scan_tcp_connect_cb, cli);
   const struct timeval timeout = { cli->timeout, 0 };
   bufferevent_set_timeouts(cli->bev, &timeout, &timeout);
 
@@ -893,14 +1000,14 @@ void ts_scan_tcp_connect(client_t * cli)
   ret = evutil_parse_sockaddr_port(ip_port, (struct sockaddr *)&ss, &len);
   if (ret != 0) {
     fprintf(stderr, "error: Failed to parse remote ip:port: %s\n", ip_port);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 
   ret = bufferevent_socket_connect(cli->bev, (struct sockaddr *)&ss, len);
   if (ret != 0) {
     fprintf(stderr, "error: Failed to connect remote ip:port: %s\n", ip_port);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 }
@@ -920,7 +1027,7 @@ void ts_scan_tls_connect_hostname(client_t * cli)
   int ret = 0;
   SSL *ssl = ts_ssl_create(cli->ssl_ctx, cli);
   if (!ssl) {
-    cli->event_error = TS_SSL_CREAT_ERR;
+    cli->event_status = TS_SSL_CREAT_ERR;
     ts_scan_error(cli);
     return;
   }
@@ -945,7 +1052,7 @@ void ts_scan_tls_connect_hostname(client_t * cli)
   if (ret != 0) {
     fprintf(stderr, "host: %s; ip: %s; error: Failed to connect remote host\n",
                                                            cli->host, cli->ip);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 }
@@ -956,7 +1063,7 @@ void ts_scan_tls_connect(client_t * cli)
   int ret = 0;
   SSL *ssl = ts_ssl_create(cli->ssl_ctx, cli);
   if (!ssl) {
-    cli->event_error = TS_SSL_CREAT_ERR;
+    cli->event_status = TS_SSL_CREAT_ERR;
     ts_scan_error(cli);
     return;
   }
@@ -987,20 +1094,32 @@ void ts_scan_tls_connect(client_t * cli)
   ret = evutil_parse_sockaddr_port(ip_port, (struct sockaddr *)&ss, &len);
   if (ret != 0) {
     fprintf(stderr, "error: Failed to parse remote ip:port: %s\n", ip_port);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 
   ret = bufferevent_socket_connect(cli->bev, (struct sockaddr *)&ss, len);
   if (ret != 0) {
     fprintf(stderr, "error: Failed to connect remote ip:port: %s\n", ip_port);
-    cli->event_error = TS_CONN_ERR;
+    cli->event_status = TS_CONN_ERR;
     ts_scan_error(cli);
   }
 }
 
 void ts_scan_connect(client_t *cli, bool ip_input)
 {
+
+  if (cli->scan_engine == SE_GNUTLS) {
+     // gnutls both tls/starttls
+    if (ip_input) {
+      ts_scan_tcp_connect(cli);
+    } else {
+      ts_scan_tcp_connect_hostname(cli);
+    }
+
+    return;
+  }
+
   if (cli->adapter_index == 0) {
     // tls
     if (ip_input) {
@@ -1031,7 +1150,7 @@ void ts_scan_parallel_host_scan(client_t *cli)
     int i = 0;
 
     if (cli->op->tls_vers_enum) {
-      for (i = 0; i < MAX_OPENSSL_TLS_VERSION; i++) {
+      for (i = 0; i < MAX_TLS_VERSION; i++) {
         client_t *c = ts_client_create(cli->evbase, cli->dnsbase, cli->ssl_ctx,
                                                     cli->op, client_count + i);
         strcpy(c->host, cli->host);
@@ -1041,13 +1160,21 @@ void ts_scan_parallel_host_scan(client_t *cli)
         c->tls_ver_index = i;
         c->tls_cert = cli->tls_cert;
         c->tls_cert->reference_count++;
+        if (i < MAX_OPENSSL_TLS_VERSION) {
+          c->scan_engine = SE_OPENSSL;
+          c->state = ST_TLS_VERSION;
+        } else {
+          c->scan_engine = SE_GNUTLS;
+          c->state = ST_GNUTLS_VERSION;
+        }
         ts_adapter_init(c);
         ts_scan_connect(c, true);
       }
     }
 
     if (cli->op->cipher_enum) {
-      for (int j=0; j < cli->op->cipher_enum_count; j++, i++) {
+      int j = 0;
+      for (j = 0; j < cli->op->cipher_enum_count; j++, i++) {
         client_t *c = ts_client_create(cli->evbase, cli->dnsbase, cli->ssl_ctx,
                                                     cli->op, client_count + i);
         strcpy(c->host, cli->host);
@@ -1055,12 +1182,34 @@ void ts_scan_parallel_host_scan(client_t *cli)
         c->session_reuse_supported = cli->session_reuse_supported;
         c->reuse_test_count = cli->reuse_test_count;
         c->cipher_index = j;
-        c->tls_ver_index = cli->tls_ver_index;
+        c->tls_ver_index = MAX_TLS_VERSION;
         c->tls_cert = cli->tls_cert;
         c->tls_cert->reference_count++;
+        c->scan_engine = SE_OPENSSL;
+        c->state = ST_CIPHER;
         ts_adapter_init(c);
         ts_scan_connect(c, true);
       }
+
+      // GnuTLS 1.3 cipher scans
+      for (int k = 0; k < cli->op->cipher1_3_enum_count; k++, i++) {
+        client_t *c = ts_client_create(cli->evbase, cli->dnsbase, cli->ssl_ctx,
+                                                    cli->op, client_count + i);
+        strcpy(c->host, cli->host);
+        strcpy(c->ip, cli->ip);
+        c->session_reuse_supported = cli->session_reuse_supported;
+        c->reuse_test_count = cli->reuse_test_count;
+        c->cipher_index = cli->op->cipher_enum_count;
+        c->cipher1_3_index = k;
+        c->tls_ver_index = MAX_TLS_VERSION;
+        c->tls_cert = cli->tls_cert;
+        c->tls_cert->reference_count++;
+        c->scan_engine = SE_GNUTLS;
+        c->state = ST_GNUTLS_CIPHER;
+        ts_adapter_init(c);
+        ts_scan_connect(c, true);
+      }
+
     }
 
     ts_scan_end(cli, ST_HOST_PARALLEL);
@@ -1545,7 +1694,7 @@ int main(int argc, char **argv)
   event_base_free(evbase);
   ts_ssl_destroy(ssl_ctx);
 
-  gnutls13_deinit();
+  gnutls13_deinit(&op);
 
   for (i = 0; i < op.batch_size; i++) {
     free(op.cert_obj_pool[i]->cipher_suite_support);
@@ -1618,7 +1767,8 @@ int main(int argc, char **argv)
       fprintf(stderr, "starttls-no-support-count: %d |",
                                               stats.starttls_no_support_count);
     }
-    fprintf(stderr, "elapsed-time: %"PRIu64".%"PRIu64" secs\n", et/1000000, et%1000000);
+    fprintf(stderr, "elapsed-time: %"PRIu64".%"PRIu64" secs\n", et/1000000,
+                                                                   et%1000000);
   }
 
   if (stats.timeout_count == stats.dnscount) {

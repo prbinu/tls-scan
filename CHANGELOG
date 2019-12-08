@@ -1,0 +1,22 @@
+tls-scan -- History of changes.   
+Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
+available at https://github.com/prbinu/tls-scan/issues
+
+Version 1.2.0 (released 2019-12-07)
+-----------------------------------
+ * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.2.0
+ 
+ * Extend async/non-blocking support to TLS 1.3 version/cipher enum scans
+
+ * TLS 1.3 scan support for STARTTLS protocols
+
+Version 1.0.1 (released 2019-12-01)
+-----------------------------------
+ * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.0.1
+
+ * Added TLS 1.3 scan support
+
+ * GnuTLS library for 1.3+ scanning - to support both old and new ciphers, we
+   link both GnuTLS and Old OpenSSL version (statically linked).
+
+
