@@ -194,8 +194,12 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
   }
 
   const char *cipher = cli->op->ciphers;
+  bool ssl2 = false;
   if (cli->cipher_index >= 0) {
     cipher = cli->op->cipher_enum_list[cli->cipher_index];
+    if (strstr(sslv2_ciphers, cipher)) {
+      ssl2 = true;
+    }
   }
 
   scan_type_t st = ts_scan_type(cli);
@@ -230,11 +234,11 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
 #endif
   } else {
 
-    if (!SSL_set_ssl_method(ssl, SSLv23_client_method())) {
+    if (!SSL_set_ssl_method(ssl, (ssl2) ? SSLv2_client_method() :
+                                                    SSLv23_client_method())) {
       fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skipping..",
-                                                   cli->tls_ver_index, cipher);
+                                                 cli->tls_ver_index, cipher);
     }
-
   }
 
   if (ST_CERT == st) {

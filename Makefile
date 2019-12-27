@@ -3,7 +3,7 @@ ifndef TS_DEPDIR
   $(info ----------------------------------)
   $(warning Env variable TS_DEPDIR [install path of openssl and libevent] is not defined; setting it to '../')
   $(warning Refer: https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh)
-  TS_DEPDIR=..
+  TS_DEPDIR=ts-build-root
   $(warning TS_DEPDIR path set to: ${TS_DEPDIR})
   $(info ----------------------------------)
 
