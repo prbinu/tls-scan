@@ -21,9 +21,8 @@ typedef void (*init_cb_fptr) (client_t *cli);
 typedef void (*tcp_connect_cb_fptr) (client_t *cli);
 
 /* Called when data is ready to read */
-typedef void (*read_cb_fptr) (client_t *cli,
-                               unsigned char *read_buf,
-                               size_t nread);
+typedef void (*read_cb_fptr) (client_t *cli, unsigned char *read_buf,
+                                                                 size_t nread);
 /*
  * Called after a succuessful write, may not required in most cases
  */
@@ -35,23 +34,38 @@ typedef void (*destroy_cb_fptr) (client_t *cli);
 
 /* STEP 1: Declare your protocol's callback functions here */
 
+// shared functions
+static void on_create(client_t *cli);
+static void on_init(client_t *cli);
+static void on_reset(client_t *cli);
+static void on_destroy(client_t *cli);
+
 // smtp
-static void on_smtp_create(client_t *cli);
-static void on_smtp_init(client_t *cli);
 static void on_smtp_read(client_t *cli, unsigned char *read_buf, size_t nread);
-static void on_smtp_reset(client_t *cli);
-static void on_smtp_destroy(client_t *cli);
-
+// imap
+static void on_imap_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// pop3
+static void on_pop3_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// ftps
+static void on_ftps_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// sieve
+static void on_sieve_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// nntp
+static void on_nntp_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// ldap
+static void on_ldap_connect(client_t *cli);
+static void on_ldap_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// xmpp
+static void on_xmpp_connect(client_t *cli);
+static void on_xmpp_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// postgres
+static void on_postgres_connect(client_t *cli);
+static void on_postgres_read(client_t *cli, unsigned char *read_buf, size_t nread);
 // mysql
-static void on_mysql_create(client_t *cli);
 static void on_mysql_read(client_t *cli, unsigned char *read_buf, size_t nread);
-
 // add new protocols below
 
-
 //
-
-
 typedef struct adapter_table {
   char protocol[32];
   create_cb_fptr create_cb;
@@ -71,8 +85,16 @@ typedef struct adapter_table {
 static const adapter_table_t adapters[] = {
 //{ "protocol-name", create, init, connect, read, write, reset, destroy }
   { "tls", NULL, NULL, NULL, NULL, NULL, NULL, NULL }, // implemented in main.c
-  { "smtp", on_smtp_create, on_smtp_init, NULL, on_smtp_read, NULL, on_smtp_reset, on_smtp_destroy },
-  { "mysql", on_mysql_create, NULL, NULL, on_mysql_read, NULL, NULL, NULL }
+  { "smtp", on_create, on_init, NULL, on_smtp_read, NULL, on_reset, on_destroy },
+  { "imap", on_create, on_init, NULL, on_imap_read, NULL, on_reset, on_destroy },
+  { "pop3", on_create, on_init, NULL, on_pop3_read, NULL, on_reset, on_destroy },
+  { "ftps", on_create, on_init, NULL, on_ftps_read, NULL, on_reset, on_destroy },
+  { "sieve", on_create, on_init, NULL, on_sieve_read, NULL, on_reset, on_destroy },
+  { "nntp", on_create, on_init, NULL, on_nntp_read, NULL, on_reset, on_destroy },
+  { "xmpp", on_create, on_init, on_xmpp_connect, on_xmpp_read, NULL, on_reset, on_destroy },
+  { "ldap", NULL, NULL, on_ldap_connect, on_ldap_read, NULL, NULL, NULL },
+  { "postgres", NULL, NULL, on_postgres_connect, on_postgres_read, NULL, NULL, NULL },
+  { "mysql", NULL, NULL, NULL, on_mysql_read, NULL, NULL, NULL }
 };
 
 
@@ -162,26 +184,22 @@ void ts_adapter_destroy(client_t *cli)
   }
 }
 
-const char *starttls = "STARTTLS\r\n";
-const char *smtpquit = "SMTP QUIT\r\n";
-const char *ret = NULL;
-
-static void on_smtp_create(client_t *cli)
+static void on_create(client_t *cli)
 {
   cli->adaptor_data_ptr = malloc(sizeof(int));
 }
 
-static void on_smtp_init(client_t *cli)
+static void on_init(client_t *cli)
 {
   *(int*)cli->adaptor_data_ptr = 0;
 }
 
-static void on_smtp_reset(client_t *cli)
+static void on_reset(client_t *cli)
 {
   *(int*)cli->adaptor_data_ptr = 0;
 }
 
-static void on_smtp_destroy(client_t *cli)
+static void on_destroy(client_t *cli)
 {
   if (cli->adaptor_data_ptr) {
     free(cli->adaptor_data_ptr);
@@ -191,6 +209,7 @@ static void on_smtp_destroy(client_t *cli)
 
 void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
 {
+  const char *starttls = "STARTTLS\r\n";
   unsigned char *rbuf = rbuffer;
   int *resp_index = (int*)cli->adaptor_data_ptr;
   char ehlo[128];
@@ -215,32 +234,33 @@ void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
     ts_scan_tcp_write(cli, (unsigned char*)ehlo, strlen(ehlo));
     break;
 
-  case 1:{
-      (*resp_index)++;
-      char *saveptr;
-      char* line = NULL;
-      bool found = false;
-      line = strtok_r((char*)rbuf, "\r\n", &saveptr);
+  case 1:
+  {
+    (*resp_index)++;
+    char *saveptr;
+    char* line = NULL;
+    bool found = false;
+    line = strtok_r((char*)rbuf, "\r\n", &saveptr);
 
-      do {
-        if ((strncmp((char*)line, "250", 3) == 0) &&
+    do {
+      if ((strncmp((char*)line, "250", 3) == 0) &&
                                                   (strstr(line, "STARTTLS"))) {
-          found = true;
-          break;
-        }
-
-      } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
-
-      if (found == false) {
-        fprintf(stderr, "host: %s; ip: %s; error: %s\n",
-                                 cli->host, cli->ip, "STARTTLS not supported");
-        ts_get_stats_obj()->starttls_no_support_count++;
-        goto error;
+        found = true;
+        break;
       }
 
-      ts_scan_tcp_write(cli, (unsigned char*)starttls, strlen(starttls));
-      break;
+    } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
+
+    if (found == false) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                                 cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
     }
+
+    ts_scan_tcp_write(cli, (unsigned char*)starttls, strlen(starttls));
+    break;
+  }
 
   case 2:
     (*resp_index)++;
@@ -249,11 +269,6 @@ void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
     } else {
       ts_scan_do_tls_handshake(cli);
     }
-    break;
-
-  case 3:
-    //(*resp_index)++;
-    //ts_scan_tcp_write(cli, (unsigned char*)smtpquit, strlen(smtpquit));
     break;
 
   default:
@@ -278,10 +293,6 @@ uint8_t ssl_handshake_response[] = {
                       0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-void on_mysql_create(client_t *cli)
-{
-  //printf("on_mysql_init called\n");
-}
 /*
 
   MySQL Packet:
@@ -340,4 +351,414 @@ void on_mysql_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
 error:
   ts_scan_error(cli);
   return;
+}
+
+void on_imap_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  switch (*resp_index) {
+  case 0:
+    (*resp_index)++;
+    const char *p = "a CAPABILITY\r\n";
+    if (strncmp((char*)rbuf, "* OK", 4) == 0) {
+      ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+    } else {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                                 cli->host, cli->ip, "STARTTLS 1 not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
+    }
+
+    break;
+  case 1:
+  {
+    (*resp_index)++;
+    char *saveptr;
+    char* line = NULL;
+    bool found = false;
+    line = strtok_r((char*)rbuf, "\r\n", &saveptr);
+
+    do {
+      if (strstr(line, "STARTTLS")) {
+        found = true;
+        break;
+      }
+
+    } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
+
+    if (found == false) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
+    }
+
+    const char *p1 = "a STARTTLS\r\n";
+    ts_scan_tcp_write(cli, (unsigned char *)p1, strlen(p1));
+    break;
+  }
+
+  case 2:
+    (*resp_index)++;
+    if (strncmp((char*)rbuf, "a OK", 4) == 0) {
+      if (cli->scan_engine == SE_GNUTLS) {
+        ts_scan_do_tls1_3_handshake(cli);
+      } else {
+        ts_scan_do_tls_handshake(cli);
+      }
+    } else {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS 2 not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+void on_pop3_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer, *resp_index);
+
+  switch (*resp_index) {
+  case 0:
+    (*resp_index)++;
+    const char *p = "STLS\r\n";
+    if (strncmp((char*)rbuf, "+OK", 3) == 0) {
+      ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+    } else {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS 1 not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
+    }
+
+    break;
+  case 1:
+    (*resp_index)++;
+    if (strncmp((char*)rbuf, "+OK", 3) == 0) {
+      if (cli->scan_engine == SE_GNUTLS) {
+        ts_scan_do_tls1_3_handshake(cli);
+      } else {
+        ts_scan_do_tls_handshake(cli);
+      }
+    } else {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS 2 not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
+      goto error;
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+void on_ftps_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer, *resp_index);
+
+  switch (*resp_index) {
+  case 0:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "220", 3) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n", cli->host, cli->ip,
+                                                    "ERROR: NON 220 response");
+      goto error;
+    }
+
+    const char *p = "FEAT\r\n";
+    ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+    break;
+
+  case 1:
+  {
+    char *saveptr;
+    char* line = NULL;
+    line = strtok_r((char*)rbuf, "\r\n", &saveptr);
+
+    do {
+      if (strncmp((char*)line, "211 ", 4) == 0) {
+        (*resp_index)++;
+        const char *p1 = "AUTH TLS\r\n";
+        ts_scan_tcp_write(cli, (unsigned char*)p1, strlen(p1));
+        break;
+      }
+    } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
+
+    break;
+  }
+
+  case 2:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "234", 3) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS not supported");
+      goto error;
+    }
+
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+void on_sieve_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer, *resp_index);
+
+  switch (*resp_index) {
+  case 0:
+  {
+    char *saveptr;
+    char* line = NULL;
+    line = strtok_r((char*)rbuf, "\r\n", &saveptr);
+
+    do {
+      if (strncmp((char*)line, "OK ", 3) == 0) {
+        (*resp_index)++;
+        const char *p = "STARTTLS\r\n";
+        ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+        break;
+      }
+    } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
+
+    break;
+  }
+  case 1:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "OK ", 3) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS not supported");
+      goto error;
+    }
+
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+
+void on_nntp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer, *resp_index);
+
+  switch (*resp_index) {
+  case 0:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "200 ", 4) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n", cli->host, cli->ip,
+                                                  "ERROR: NON 200 response");
+      goto error;
+    }
+
+    const char *p = "STARTTLS\r\n";
+    ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+    break;
+
+  case 1:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "382 ", 3) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS not supported");
+      goto error;
+    }
+
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+void on_xmpp_connect(client_t *cli)
+{
+  char buf[512];
+  char *host = cli->host;
+  if (cli->host[0] != 0) {
+    host = cli->ip;
+  }
+
+  snprintf(buf, sizeof(buf), "<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%s' version='1.0'>\n", host);
+  ts_scan_tcp_write(cli, ( unsigned char *)buf, strlen(buf));
+}
+
+void on_xmpp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  unsigned char *rbuf = rbuffer;
+  int *resp_index = (int*)cli->adaptor_data_ptr;
+
+  if (rbuf_len < 1) {
+    goto error;
+  }
+
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer, *resp_index);
+  const char *p = "<starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/>\n";
+  switch (*resp_index) {
+  case 0:
+    if (strstr((char*)rbuf, "</stream:features>")) {
+      (*resp_index)++;
+      if (strstr((char*)rbuf, "<starttls")) {
+        ts_scan_tcp_write(cli, (unsigned char*)p, strlen(p));
+      } else {
+        fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                                   cli->host, cli->ip, "STARTTLS 1 not supported");
+        ts_get_stats_obj()->starttls_no_support_count++;
+        goto error;
+      }
+    }
+
+    break;
+  case 1:
+    (*resp_index)++;
+
+    if (strncmp((char*)rbuf, "<proceed", 8) != 0) {
+      fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                               cli->host, cli->ip, "STARTTLS not supported");
+      goto error;
+    }
+
+    if (cli->scan_engine == SE_GNUTLS) {
+      ts_scan_do_tls1_3_handshake(cli);
+    } else {
+      ts_scan_do_tls_handshake(cli);
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
+}
+
+void on_ldap_connect(client_t *cli)
+{
+  uint8_t ldap_str[] = {
+    0x30, 0x1d, 0x02, 0x01, 0x01, 0x77,
+    0x18, 0x80, 0x16, 0x31, 0x2e, 0x33,
+    0x2e, 0x36, 0x2e, 0x31, 0x2e, 0x34,
+    0x2e, 0x31, 0x2e, 0x31, 0x34, 0x36,
+    0x36, 0x2e, 0x32, 0x30, 0x30, 0x33, 0x37
+  };
+  ts_scan_tcp_write(cli, ldap_str, sizeof(ldap_str));
+}
+
+void on_ldap_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  if (cli->scan_engine == SE_GNUTLS) {
+    ts_scan_do_tls1_3_handshake(cli);
+  } else {
+    ts_scan_do_tls_handshake(cli);
+  }
+}
+
+void on_postgres_connect(client_t *cli)
+{
+  uint8_t postgres_str[] = { 0x00, 0x00, 0x00, 0x08, 0x04, 0xD2, 0x16, 0x2F };
+  ts_scan_tcp_write(cli, postgres_str, sizeof(postgres_str));
+}
+
+void on_postgres_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  if (cli->scan_engine == SE_GNUTLS) {
+    ts_scan_do_tls1_3_handshake(cli);
+  } else {
+    ts_scan_do_tls_handshake(cli);
+  }
 }

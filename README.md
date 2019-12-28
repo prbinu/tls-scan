@@ -9,6 +9,7 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 ## Features
 
 * **New: Support for TLSv1.3**
+* **TLS and StartTLS protocol support: SMTP, IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, POSTGRES, MYSQL**
 * Detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
 * Extract X.509 certificate fields from the target server and print it in JSON format
 * Certificate and host name verification checks
@@ -16,11 +17,10 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 * TLS compression checks
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
-* Support TLS, STARTTLS SMTP and MYSQL protocols
-* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers
+* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers (say scan IoT devices at scale)
 * Script friendly output - Can be combined with other tools to analyze the scan results
 
-This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
+This tool is primarily for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
 ## Installation
 
@@ -211,7 +211,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 |----------------|-------------|
 -H  --help | Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
 -c  --connect=\<arg\> | `target[:port]` to scan. target = {hostname, IPv4, [IPv6] }. IPv6 example: [::1]:443 (default port 443).
---starttls=\<protocol\> | Specify the starttls protocol. Current options: `smtp` and `mysql`. If the flag is not provided, program will choose the protocol based on the given port. Port `443`, `465`, `993` and `995` defaults to `tls`. Port `25` and `587` uses starttls `smtp` by default. Port `3306` use `mysql` SSL.
+--starttls=\<protocol\> | Supported protocols: `smtp`, `imap`, `pop3`, `ftps`, `sieve`, `nntp`, `xmpp`, `ldap`, `postgres`, `mysql`, `tls` (default)
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
 -e  --cipher-enum | Enumerate supported ciphers. Currently use `--tls-old` ciphers. Try `--meta-info` to find predefined cipher suite options.
@@ -247,7 +247,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 * Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
 
 ## TLS 1.3 Support
-To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same prcoess space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used for scanning SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2 and GnuTLS is used for TLSv1.3.
+To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same process space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used for scanning SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2 and GnuTLS is used for TLSv1.3.
 
 ## Contributions
 Collaborators and pull requests are welcome!

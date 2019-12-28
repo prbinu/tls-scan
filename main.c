@@ -879,7 +879,11 @@ void ts_scan_do_tls_handshake(client_t *cli)
 void ts_scan_tcp_write(client_t *cli,
                                    const unsigned char *data, size_t data_len)
 {
-  bufferevent_write(cli->temp_bev, data, data_len);
+  if (cli->temp_bev) {
+    bufferevent_write(cli->temp_bev, data, data_len);
+  } else {
+    bufferevent_write(cli->bev, data, data_len);
+  }
 }
 
 void ts_scan_tcp_read_cb(struct bufferevent *bev, void *ptr)
@@ -1284,7 +1288,8 @@ void print_usage()
   // deprecated, use --connect instead
   //printf("  %s\n", "-h  --host=<hostname>    Host to scan");
   //printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
-  printf("  %s\n", "    --starttls=<arg>     Options: smtp, mysql, tls");
+  printf("  %s\n", "    --starttls=<proto>   Supported protocols: smtp, imap, pop3, ftps, sieve,");
+  printf("  %s\n", "                         nntp, xmpp, ldap, postgres, mysql, tls (default)");
   printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
