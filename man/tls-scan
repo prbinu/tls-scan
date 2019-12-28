@@ -1,5 +1,5 @@
 .\" Manpage for tls-scan.
-.TH man 1 "08 Feb 2017" "1.0" "tls-scan man page"
+.TH man 1 "28 Dec 2019" "1.3.0" "tls-scan man page"
 .SH NAME
 tls-scan \- A fast TLS scanner
 .SH SYNOPSIS
@@ -19,14 +19,17 @@ For more information, please visit:
 -H  --help
               Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
 
+-c  --connect=<arg>
+              target[:port] to scan. target = {hostname, IPv4, [IPv6] }. IPv6 example: [::1]:443 (default port 443).
+
 -h  --host=<arg>
               Name of the host to scan. By passing an additional flag '--ip', the host value will be intepreted as an IP address.
 
 -p  --port=<arg> [default: 443]
               Destination TCP port.
 
--P  --starttls=<smtp|mysql>
-              Specify the starttls protocol. Current options: smtp and mysql. If the flag is not provided, program will choose the protocol based on the given port. Port 443, 465, 993 and 995 defaults to 'tls'. Port 25 and 587 uses starttls 'smtp' by default. Port 3306 use 'msql' SSL.
+-P  --starttls=<protocol>
+              Supported protocols: smtp, imap, pop3, ftps, sieve, nntp, xmpp, ldap, postgres, mysql, tls (default)
 
 -c  --cacert=<file>
               Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
@@ -113,15 +116,15 @@ For more information, please visit:
 
 .SH EXAMPLES
 
-% tls-scan --host=<host-name> --pretty
+% tls-scan -c smtp.mail.yahoo.com:587 --starttls=smtp  --cacert=ca-bundle.crt 2> /dev/null
 
-% tls-scan --host=<host-name> --all 2> /dev/null
+% tls-scan --infile=domains.txt --cacert=ca-bundle.crt 2> /dev/null
 
-% tls-scan --host=<host-name>  --port=587 --starttls=smtp  --cacert=/usr/local/etc/tls-scan/ca-bundle.crt 2> /dev/null
+% tls-scan -c [::1]:443 --cacert=ca-bundle.crt --pretty 2> /dev/null
 
-% tls-scan --infile=domains.txt --cacert=./cert.pem 2> /dev/null
+% tls-scan -c 10.10.10.10 --cacert=ca-bundle.crt --pretty 2> /dev/null
 
-% cat domains.txt | tls-scan --port=443 --ssl3 --cacert=./cert.pem 2> /dev/null
+% cat domains.txt | tls-scan --cacert=ca-bundle.crt 2> /dev/null
 
 % tls-scan --host=<host-name> --session-print 2> /dev/null
 
