@@ -9,18 +9,18 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 ## Features
 
 * **New: Support for TLSv1.3**
-* **TLS and StartTLS protocol support: SMTP, IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, POSTGRES, MYSQL**
+* **TLS and StartTLS protocol support: SMTP, IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, RDP, POSTGRES, MYSQL**
+* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers (say scan IoT devices at scale)
 * Detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
+* Cipher and TLS version enumeration
 * Extract X.509 certificate fields from the target server and print it in JSON format
 * Certificate and host name verification checks
-* Cipher and TLS version enumeration
 * TLS compression checks
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
-* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers (say scan IoT devices at scale)
 * Script friendly output - Can be combined with other tools to analyze the scan results
 
-This tool is primarily for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
+This tool is primarily for collecting TLS cipher and X.509 certificate data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
 ## Installation
 
@@ -211,12 +211,13 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 |----------------|-------------|
 -H  --help | Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
 -c  --connect=\<arg\> | `target[:port]` to scan. target = {hostname, IPv4, [IPv6] }. IPv6 example: [::1]:443 (default port 443).
---starttls=\<protocol\> | Supported protocols: `smtp`, `imap`, `pop3`, `ftps`, `sieve`, `nntp`, `xmpp`, `ldap`, `postgres`, `mysql`, `tls` (default)
+--starttls=\<protocol\> | Supported protocols: `smtp`, `imap`, `pop3`, `ftp`, `sieve`, `nntp`, `xmpp`, `ldap`, `rdp`, `postgres`, `mysql`, `tls` (default)
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
 -e  --cipher-enum | Enumerate supported ciphers. Currently use `--tls-old` ciphers. Try `--meta-info` to find predefined cipher suite options.
 --show-unsupported-ciphers | Include unsupported ciphers in the cipher list to JSON output.
 -V  --version-enum | Enumerate supported TLS versions.
+-v  --version | Print tls-scan version and build information.
 -r  --session-reuse | Enable ssl session reuse.
 -u  --session-print | Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to `--session-file` to test session reuse.
 -T  --session-file=\<file\> | File that contains SSL session in PEM format.

@@ -20,8 +20,10 @@ $(info PREFIX (install) path: ${PREFIX})
 src = $(wildcard *.c)
 obj = $(src:.c=.o)
 
+# tls-scan version
+TS_VERSION = $(shell grep -m 1  Version ./CHANGELOG | awk '{print $$2}')
 CC = gcc
-CFLAGS= -I./include -I ${TS_DEPDIR}/include -I ${TS_DEPDIR}/include -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEPDIR}/lib -D_GNU_SOURCE
+CFLAGS = -I./include -I ${TS_DEPDIR}/include -I ${TS_DEPDIR}/include -Wall -Wundef -Wshadow -Wunreachable-code -Wswitch-default -Wcast-align -pedantic -g -std=c99 -Wl,-rpath,${TS_DEPDIR}/lib -D_GNU_SOURCE -DTS_VERSION=\"${TS_VERSION}\" -DTS_BUILD_DATE=\"$(shell date '+%Y-%m-%d')\" -DTS_OS=\"$(shell uname -s)\"
 
 LDFLAGS = -L ${TS_DEPDIR}/lib -lssl -L ${TS_DEPDIR}/lib -lcrypto -L ${TS_DEPDIR}/lib -levent -L ${TS_DEPDIR}/lib -levent_openssl -L ${TS_DEPDIR}/lib -lgnutls -L ${TS_DEPDIR}/lib -lhogweed -L ${TS_DEPDIR}/lib -lnettle -ldl -lpthread $(libdep_$(shell uname -s))
 

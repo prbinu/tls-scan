@@ -1279,7 +1279,7 @@ const char *ts_supported_protocol(uint32_t port)
 void print_usage()
 {
   printf("%s\n", "Usage: tls-scan [OPTION]...");
-  printf("Built with OpenSSL-%lx\n", OPENSSL_VERSION_NUMBER);
+  printf("Version: %s\n", TS_VERSION);
   printf("\n%s\n","With no options, program accepts hostnames from standard input, scans TLS");
   printf("%s\n","on port 443, and print results to standard output");
   printf("\n%s\n", "Options:");
@@ -1288,8 +1288,8 @@ void print_usage()
   // deprecated, use --connect instead
   //printf("  %s\n", "-h  --host=<hostname>    Host to scan");
   //printf("  %s\n", "-p  --port=<port>        TCP port (default 443)");
-  printf("  %s\n", "    --starttls=<proto>   Supported protocols: smtp, imap, pop3, ftps, sieve,");
-  printf("  %s\n", "                         nntp, xmpp, ldap, postgres, mysql, tls (default)");
+  printf("  %s\n", "    --starttls=<proto>   Supported protocols: smtp, imap, pop3, ftp, sieve,");
+  printf("  %s\n", "                         nntp, xmpp, ldap, rdp, postgres, mysql, tls (default)");
   printf("  %s\n", "    --cacert=<file>      Root CA file/bundle for certificate validation");
   printf("  %s\n", "-C  --ciphers=<arg>      Ciphers to use; try 'openssl ciphers' to see all.");
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
@@ -1319,7 +1319,7 @@ void print_usage()
   printf("  %s\n", "-f  --infile=<file>      Input file with domains or IPs (default stdin)");
   printf("  %s\n", "-o  --outfile=<file>     Output file (default stdout)");
   printf("  %s\n", "-n  --pretty             Pretty print; add newline (\\n) between record fields");
-  //printf("  %s\n", "-v   --verbose         verbose");
+  printf("  %s\n", "-v  --version            Print version and build information");
   printf("  %s\n", "-H  --help               help");
   printf("  %s\n", "-N  --nameserver=<ip>    DNS resolver IPs, (eg. -N <ip1> -N <ip2> -N <ip3>..)");
   printf("  %s\n", "    --ssl2               SSLv2 ciphers");
@@ -1398,7 +1398,7 @@ int main(int argc, char **argv)
     {"no-parallel-enum", no_argument, 0, 'X'},
     {"concurrency", required_argument, 0, 'b'},
     {"json", no_argument, 0, 'j'},
-    {"verbose", no_argument, 0, 'v'},
+    {"version", no_argument, 0, 'v'},
     {"help", no_argument, 0, 'H'},
     {"infile", required_argument, 0, 'f'},
     {"timeout", required_argument, 0, 't'},
@@ -1445,7 +1445,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:v:t:S:o:N:123456Q789VXnOjMH",
+                            "P:h:p:c:C:eUruT:as:b:vt:S:o:N:123456Q789VXnOjMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1579,7 +1579,10 @@ int main(int argc, char **argv)
       strcpy(op.ciphers, old_ciphers);
       break;
     case 'v':
-      op.verbose++;
+      printf("tls-scan %s %s %s\n", TS_VERSION, TS_OS, TS_BUILD_DATE);
+      printf("Built with OpenSSL-%lx GnuTLS-%x\n",
+                               OPENSSL_VERSION_NUMBER, GNUTLS_VERSION_NUMBER);
+      exit(EXIT_SUCCESS);
       break;
     case 'M':
       print_meta();

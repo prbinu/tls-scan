@@ -55,6 +55,9 @@ static void on_nntp_read(client_t *cli, unsigned char *read_buf, size_t nread);
 // ldap
 static void on_ldap_connect(client_t *cli);
 static void on_ldap_read(client_t *cli, unsigned char *read_buf, size_t nread);
+// rdp
+static void on_rdp_connect(client_t *cli);
+static void on_rdp_read(client_t *cli, unsigned char *read_buf, size_t nread);
 // xmpp
 static void on_xmpp_connect(client_t *cli);
 static void on_xmpp_read(client_t *cli, unsigned char *read_buf, size_t nread);
@@ -88,11 +91,12 @@ static const adapter_table_t adapters[] = {
   { "smtp", on_create, on_init, NULL, on_smtp_read, NULL, on_reset, on_destroy },
   { "imap", on_create, on_init, NULL, on_imap_read, NULL, on_reset, on_destroy },
   { "pop3", on_create, on_init, NULL, on_pop3_read, NULL, on_reset, on_destroy },
-  { "ftps", on_create, on_init, NULL, on_ftps_read, NULL, on_reset, on_destroy },
+  { "ftp", on_create, on_init, NULL, on_ftps_read, NULL, on_reset, on_destroy },
   { "sieve", on_create, on_init, NULL, on_sieve_read, NULL, on_reset, on_destroy },
   { "nntp", on_create, on_init, NULL, on_nntp_read, NULL, on_reset, on_destroy },
   { "xmpp", on_create, on_init, on_xmpp_connect, on_xmpp_read, NULL, on_reset, on_destroy },
   { "ldap", NULL, NULL, on_ldap_connect, on_ldap_read, NULL, NULL, NULL },
+  { "rdp", NULL, NULL, on_rdp_connect, on_rdp_read, NULL, NULL, NULL },
   { "postgres", NULL, NULL, on_postgres_connect, on_postgres_read, NULL, NULL, NULL },
   { "mysql", NULL, NULL, NULL, on_mysql_read, NULL, NULL, NULL }
 };
@@ -227,6 +231,7 @@ void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "220", 3) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n", cli->host, cli->ip,
                                                     "ERROR: NON 220 response");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -251,7 +256,7 @@ void on_smtp_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
 
     } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
 
-    if (found == false) {
+    if (!found) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                  cli->host, cli->ip, "STARTTLS not supported");
       ts_get_stats_obj()->starttls_no_support_count++;
@@ -343,6 +348,7 @@ void on_mysql_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
   } else {
     fprintf(stderr, "host: %s; ip: %s; error: SSL NOT Supported\n",
                                                         cli->ip, cli->host);
+    ts_get_stats_obj()->starttls_no_support_count++;
     goto error;
   }
 
@@ -392,7 +398,7 @@ void on_imap_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
 
     } while ((line = strtok_r(NULL, "\r\n", &saveptr)) != NULL);
 
-    if (found == false) {
+    if (!found) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                cli->host, cli->ip, "STARTTLS not supported");
       ts_get_stats_obj()->starttls_no_support_count++;
@@ -501,6 +507,7 @@ void on_ftps_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "220", 3) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n", cli->host, cli->ip,
                                                     "ERROR: NON 220 response");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -532,6 +539,7 @@ void on_ftps_read(client_t * cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "234", 3) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -588,6 +596,7 @@ void on_sieve_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "OK ", 3) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -628,6 +637,7 @@ void on_nntp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "200 ", 4) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n", cli->host, cli->ip,
                                                   "ERROR: NON 200 response");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -641,6 +651,7 @@ void on_nntp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "382 ", 3) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -706,6 +717,7 @@ void on_xmpp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
     if (strncmp((char*)rbuf, "<proceed", 8) != 0) {
       fprintf(stderr, "host: %s; ip: %s; error: %s\n",
                                cli->host, cli->ip, "STARTTLS not supported");
+      ts_get_stats_obj()->starttls_no_support_count++;
       goto error;
     }
 
@@ -746,6 +758,47 @@ void on_ldap_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
   } else {
     ts_scan_do_tls_handshake(cli);
   }
+}
+
+void on_rdp_connect(client_t *cli)
+{
+  uint8_t rdp_str[] = {
+    0x03, 0x00, 0x00, 0x13, 0x0E, 0xE0,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+    0x00, 0x08, 0x00, 0x03, 0x00, 0x00, 0x00
+  };
+
+  ts_scan_tcp_write(cli, rdp_str, sizeof(rdp_str));
+}
+
+void on_rdp_read(client_t *cli, unsigned char *rbuffer, size_t rbuf_len)
+{
+  //printf("%.*s+  resp_index: %d\n", (int)rbuf_len, rbuffer);
+  if (rbuf_len < 2) {
+    fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                             cli->host, cli->ip, "STARTTLS not supported");
+    ts_get_stats_obj()->starttls_no_support_count++;
+    goto error;
+  }
+
+  if ((rbuffer[0] != 0x03) || (rbuffer[1] != 0x00)) {
+    fprintf(stderr, "host: %s; ip: %s; error: %s\n",
+                             cli->host, cli->ip, "STARTTLS 2 not supported");
+    ts_get_stats_obj()->starttls_no_support_count++;
+    goto error;
+  }
+
+  if (cli->scan_engine == SE_GNUTLS) {
+    ts_scan_do_tls1_3_handshake(cli);
+  } else {
+    ts_scan_do_tls_handshake(cli);
+  }
+
+  return;
+
+error:
+  ts_scan_error(cli);
+  return;
 }
 
 void on_postgres_connect(client_t *cli)
