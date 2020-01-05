@@ -32,7 +32,7 @@ Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://gith
 
 ### Build From Source
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
 
 *Build Pre-requisites* :
 
@@ -47,15 +47,17 @@ All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/mast
 *Build* :
 
 ```sh
+% git clone https://github.com/prbinu/tls-scan.git
+% cd tls-scan
 % ./build-x86-64.sh
 ```
 
-The newly built tls-scan binary can be found at `./ts-build-root/bin`
+The newly built tls-scan binary can be found at `./build-root/bin`. build-x86-64.sh is a wrapper script that calls `./bootstrap.sh` to build all dependent packages. bootstrap.sh also executes the `autoreconf -i` command to generate `configure` file. Subsequently it calles the standard `./configure`, `make && make install`.
 
 *Test* :
 
 ```sh
-% cd ts-build-root/bin
+% cd build-root/bin
 % ./tls-scan --connect=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
 ```
 
@@ -68,10 +70,12 @@ If you do not have the pre-requisite packages, you can easily install those pack
 *Build* :
 
 ```sh
+% git clone https://github.com/prbinu/tls-scan.git
+% cd tls-scan
 % ./build-x86-64.sh
 ```
 
-The tls-scan binary can be found at `./ts-build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
+The tls-scan binary can be found at `./build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
 
 ### Docker
 

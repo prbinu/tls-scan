@@ -10,7 +10,7 @@ openssl req -new -newkey rsa:2048 -x509 -sha256 -days 3650 -nodes -out rsa-test.
 openssl req -x509 -nodes -days 3650 -newkey ec:<(openssl ecparam -name prime256v1) -keyout ecdsa-test.key -out ecdsa-test.crt
 
 # DSS/DSA certs
-./ts-build-root/bin/openssl req -x509 -new -days 3650 -key dsa-test.key -out dsa-test.crt
+./build-root/bin/openssl req -x509 -new -days 3650 -key dsa-test.key -out dsa-test.crt
 
 ```
 
@@ -24,7 +24,7 @@ export CIPHERS="ECDHE-ECDSA-CHACHA20-POLY1305-OLD:ECDHE-RSA-CHACHA20-POLY1305-OL
 ### With RSA Certificate
 
 ```bash
-./ts-build-root/bin/openssl s_server -accept 4443 -cert test/rsa-test.crt -key test/rsa-test.key -cipher "${CIPHERS}"
+./build-root/bin/openssl s_server -accept 4443 -cert test/rsa-test.crt -key test/rsa-test.key -cipher "${CIPHERS}"
 
 ```
 
@@ -37,14 +37,14 @@ tls-scan -c localhost:4443 --pretty --all --no-parallel-enum  --show-unsupported
 ### With ECDSA Certificate
 
 ```bash
-./ts-build-root/bin/openssl s_server -accept 4443 -cert test/ecdsa-test.crt -key test/ecdsa-test.key -cipher "${CIPHERS}"
+./build-root/bin/openssl s_server -accept 4443 -cert test/ecdsa-test.crt -key test/ecdsa-test.key -cipher "${CIPHERS}"
 
 ```
 
 ### With DSA Certificate
 
 ```bash
-./ts-build-root/bin/openssl s_server -accept 4443 -cert test/dsa-test.crt -key test/dsa-test.key -cipher "${CIPHERS}"
+./build-root/bin/openssl s_server -accept 4443 -cert test/dsa-test.crt -key test/dsa-test.key -cipher "${CIPHERS}"
 
 ```
 
@@ -53,6 +53,6 @@ The above examples use PeterMosmans [`openssl-1.0.2`](https://github.com/PeterMo
 ### GNUTLS Server Example
 
 ```bash
-./ts-build-root/bin/gnutls-serv --x509certfile=test/ecdsa-test.crt --x509keyfile=test/ecdsa-test.key -p 4443
+./build-root/bin/gnutls-serv --x509certfile=test/ecdsa-test.crt --x509keyfile=test/ecdsa-test.key -p 4443
 
 ```
