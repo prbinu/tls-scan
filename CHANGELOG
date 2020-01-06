@@ -2,6 +2,12 @@ tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 available at https://github.com/prbinu/tls-scan/issues
 
+Version 1.4.1 (2020-01-05)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.1
+
+* Build - moving closer to autotools style builds
+
 Version 1.4.0 (2019-12-30)
 -----------------------------------
 * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.0
