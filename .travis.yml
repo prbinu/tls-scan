@@ -13,7 +13,7 @@ before_deploy:
 - rm $TRAVIS_BUILD_DIR/tls-scan
 - mkdir -p $TRAVIS_BUILD_DIR/tls-scan/man/man1
 - cp $TRAVIS_BUILD_DIR/build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan/tls-scan
-- cp $TRAVIS_BUILD_DIR/build-root/share/man/man1/tls-scan.1.gz $TRAVIS_BUILD_DIR/tls-scan/man/man1/tls-scan.1.gz
+- cp $TRAVIS_BUILD_DIR/build-root/share/man/man1/tls-scan.1 $TRAVIS_BUILD_DIR/tls-scan/man/man1/tls-scan.1
 - cp $TRAVIS_BUILD_DIR/build-root/etc/tls-scan/ca-bundle.crt $TRAVIS_BUILD_DIR/tls-scan/ca-bundle.crt
 - tar -zcvf tls-scan-${TRAVIS_OS_NAME}.tar.gz ./tls-scan/
 deploy:
