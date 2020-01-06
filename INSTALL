@@ -1,0 +1,61 @@
+TLS-SCAN INSTALLATION
+---------------------
+
+ This document describes installation on Linux and Mac OS/X (Darwin)
+ operating systems.
+
+Pre-requisites
+--------------
+
+ To build and install 'tls-scan', you will need:
+
+  autoconf
+  automake
+  libtool
+  pkg-config
+  gcc
+  git
+
+ Build (direct) dependencies:
+
+  libevent 2x
+  openssl 1.0.2
+  gnutls
+
+ The above dependent packages also pulls few other packages as well.
+ To reduce the complexy of building dependent pckages, we have created
+ a script 'bootstrap.sh'. This script download and build all tls-scan
+ dependent packages and finally executes 'autoreconf'.
+
+Build and install from source
+-----------------------------
+
+ On Linux and Mac OS/X:
+
+  $ ./bootstrap.sh
+  $ ./configure
+  $ make
+  $ make install
+
+ The 'build-x86-64.sh' is a utility script that wraps the above commands.
+
+
+Installation from binary
+------------------------
+
+ Steps:
+  1. Download the latest tarball:
+     https://github.com/prbinu/tls-scan/releases/latest
+  2. Un-tar the file creates a tls-scan directory locally that contains
+     tls-scan binary, ca-bundle.crt and the man page
+
+
+Source distribution
+-------------------
+
+ The following command will create a source distribution.
+
+  $ make dist
+
+ Note: While building from a source tarball, make sure ./bootstrap.sh 
+ is executed prior to ./configure.
