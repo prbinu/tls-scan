@@ -10,6 +10,7 @@ compiler:
 script:
 - "./build-x86-64.sh"
 before_deploy:
+- rm $TRAVIS_BUILD_DIR/tls-scan
 - mkdir -p $TRAVIS_BUILD_DIR/tls-scan/man/man1
 - cp $TRAVIS_BUILD_DIR/build-root/bin/tls-scan $TRAVIS_BUILD_DIR/tls-scan/tls-scan
 - cp $TRAVIS_BUILD_DIR/build-root/man/man1/tls-scan.1.gz $TRAVIS_BUILD_DIR/tls-scan/man/man1/tls-scan.1.gz
