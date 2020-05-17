@@ -280,7 +280,7 @@ static const char *bool_to_str(bool b)
   }
 }
 
-static const char *get_ssl_version_str(int index)
+const char *get_ssl_version_str(int index)
 {
   switch (index) {
   case SSLv2:

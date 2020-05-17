@@ -100,6 +100,8 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert, FILE *fp, bool prett
 
 void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty);
 
+const char *get_ssl_version_str(int index);
+
 /* */
 const SSL_METHOD *ts_tls_get_method(int index);
 

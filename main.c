@@ -101,8 +101,6 @@ void global_init()
 }
 
 /* TODO
-1. clean up -cipher, -ssl2.3, -tls1,2,3 options
-2. add more protocol support
 3. tls13 only scans
 4. convert tls1.3 cipher name to openssl compliant name
 5. implement ST_GNUTLS_CERT
@@ -576,17 +574,17 @@ void ts_scan_end(client_t * cli, scan_type_t st)
     break;
   }
 
-  if ((op.outfile[0] != 0) || (op.stats_outfile[0] != 0)) {
+  if ((!cli->op->no_parallel_enum) && ((op.outfile[0] != 0) || (op.stats_outfile[0] != 0))) {
     uint64_t et = ts_elapsed_time(stats.start_time);
 
     ++stats.hcount;
     if (op.outfile[0] != 0) {
-      fprintf(stdout, "\rstatus: %d/%d | elapsed-time: %"PRIu64" secs | tls-handshake: %d | host: %s          ", stats.hcount, stats.connect_count, et/1000000, stats.gross_tls_handshake, cli->host);
+      fprintf(stdout, "\relapsed-time: %"PRIu64" secs | status: %d/%d | tls-handshake: %d | target: %s          ", et/1000000, stats.hcount, stats.connect_count, stats.gross_tls_handshake, cli->host);
       fflush(stdout);
     }
 
     if (op.stats_outfile[0] != 0) {
-      fprintf(cli->op->statsfile_fp, "%"PRIu64" %d %d %d %d %d %d %d %d %d %d\n", et/1000000, stats.hcount, stats.connect_count, stats.network_err_count, stats.dns_errcount, stats.remote_close_count, stats.error_count, stats.connect_err_count, stats.timeout_count, stats.tls_handshake, stats.gross_tls_handshake);
+      fprintf(cli->op->statsfile_fp, "%"PRIu64" %d %d %d %d %d %d %d %d %d %d %s\n", et/1000000, stats.hcount, stats.connect_count, stats.network_err_count, stats.dns_errcount, stats.remote_close_count, stats.error_count, stats.connect_err_count, stats.timeout_count, stats.tls_handshake, stats.gross_tls_handshake, cli->host);
     }
   }
 
@@ -598,8 +596,35 @@ void ts_scan_end(client_t * cli, scan_type_t st)
 void ts_scan_disconnect(client_t * cli)
 {
   if (cli) {
-    ts_client_reset(cli);
 
+    // only for single scans + with no_parallel_scans
+    if ((cli->op->no_parallel_enum) && ((op.outfile[0] != 0) || (op.stats_outfile[0] != 0))) {
+      uint64_t et = ts_elapsed_time(stats.start_time);
+
+      FILE *fp = stdout;
+      char cr = '\r';
+      if (op.stats_outfile[0] != 0) {
+        fp = cli->op->statsfile_fp;
+        cr = '\n';
+      }
+
+      if ((cli->tls_ver_index < 0) && (cli->cipher_index < 0)) {
+        fprintf(fp, "%celapsed-time: %"PRIu64".%"PRIu64" secs | tls-handshake: %d | scan-type: cert         ", cr, et/1000000, et%1000000, stats.gross_tls_handshake);
+      } else if (cli->state == ST_TLS_VERSION || cli->state == ST_GNUTLS_VERSION) {
+        fprintf(fp, "%celapsed-time: %"PRIu64".%"PRIu64" secs | tls-handshake: %d | scan-type: tls-version-enum %s         ", cr, et/1000000, et%1000000, stats.gross_tls_handshake, get_ssl_version_str(cli->tls_ver_index));
+      } else if (cli->state == ST_GNUTLS_CIPHER) {
+        fprintf(fp, "%celapsed-time: %"PRIu64".%"PRIu64" secs | tls-handshake: %d | scan-type: cipher %d:%d %s         ", cr, et/1000000, et%1000000, stats.gross_tls_handshake, cli->cipher1_3_index+1 + cli->cipher_index+1, cli->op->cipher1_3_enum_count + cli->op->cipher_enum_count, cli->op->cipher1_3_enum_list[cli->cipher1_3_index]);
+      } else if (cli->state == ST_CIPHER) {
+        fprintf(fp, "%celapsed-time: %"PRIu64".%"PRIu64" secs | tls-handshake: %d | scan-type: cipher %d:%d %s         ", cr, et/1000000, et%1000000, stats.gross_tls_handshake, cli->cipher_index+1, cli->op->cipher_enum_count + cli->op->cipher1_3_enum_count, cli->op->cipher_enum_list[cli->cipher_index]);
+      }
+
+      if (cr == '\r') {
+        fflush(stdout);
+      }
+
+    }
+
+    ts_client_reset(cli);
     scan_type_t st =  ts_scan_next(cli);
     switch (st) {
 
@@ -708,7 +733,7 @@ void tls_scan_connect_error_handler(struct bufferevent *bev, short events,
     // it is expected to fail version and cipher enumeration requests
     // so skip printing msgs to error console for those requests
     if ((ST_TLS_VERSION != t) && (ST_CIPHER != t)) {
-    fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: \
+      fprintf(stderr, "host: %s; ip: %s; error: Network; errormsg: \
                      Error encountered while reading\n", cli->host, cli->ip);
     }
 
@@ -1132,7 +1157,7 @@ void ts_scan_connect(client_t *cli, bool ip_input)
 {
 
   if (cli->scan_engine == SE_GNUTLS) {
-     // gnutls both tls/starttls
+    // gnutls both tls/starttls
     if (ip_input) {
       ts_scan_tcp_connect(cli);
     } else {
@@ -1640,7 +1665,9 @@ int main(int argc, char **argv)
   if (strlen(op.stats_outfile) > 0) {
     op.statsfile_fp = fopen(op.stats_outfile, "w");
     assert(op.statsfile_fp != NULL);
-    fprintf(op.statsfile_fp, "elapsed-time completed connect_count network-error dns-errcount remote-close-error unknown-error connect-error timeout-error tls-handshake gross-tls-handshake\n");
+    if (!op.no_parallel_enum) {
+      fprintf(op.statsfile_fp, "elapsed-time completed connect-count network-error dns-errcount remote-close-error unknown-error connect-error timeout-error tls-handshake gross-tls-handshake target\n");
+    }
   }
 
   in_handle.eof = false;
@@ -1691,9 +1718,20 @@ int main(int argc, char **argv)
     //      (strncmp(p, "RC4-64-MD5", 10)) &&
     //      (strncmp(p, "DES-CBC-MD5", 11)) &&
           (strncmp(p, "PSK", 3))) {
-        strcpy(op.cipher_enum_list[op.cipher_enum_count++], p);
-        //fprintf(stderr, "%s", p);
 
+        // avoid duplicate ciphers
+        int k = 0;
+        while (k < op.cipher_enum_count) {
+          if (strcmp(p, op.cipher_enum_list[k]) == 0) {
+            break;
+	  }
+          k++;
+        }
+
+        if (k == op.cipher_enum_count) {
+          strcpy(op.cipher_enum_list[op.cipher_enum_count++], p);
+          //fprintf(stderr, "%s:", p);
+        }
       }
 
       if (op.cipher_enum_count >= CIPHER_ENUM_SZ) {
@@ -1701,12 +1739,11 @@ int main(int argc, char **argv)
       }
     }
 
-    //fprintf(stderr, "%d, %d\n", i, op.cipher_enum_count);
-
     if (ssl_tmp != NULL) {
       SSL_free(ssl_tmp);
     }
   }
+
   op.cert_obj_pool = (struct tls_cert**)malloc(sizeof(struct tls_cert*) *
                                                               op.batch_size);
 
@@ -1755,7 +1792,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d)\n", op.cipher_enum_count);
-    fprintf(stderr, " [%d] connect_count       : %d\n",
+    fprintf(stderr, " [%d] host-count       : %d\n",
                                                           pid, stats.connect_count);
     fprintf(stderr, " [%d] network-error       : %d\n",
                                                  pid, stats.network_err_count);
@@ -1792,7 +1829,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d) |", op.cipher_enum_count);
-    fprintf(stderr, "connect_count: %d |", stats.connect_count);
+    fprintf(stderr, "host-count: %d |", stats.connect_count);
     fprintf(stderr, "network-error: %d |", stats.network_err_count);
     fprintf(stderr, "dns-errcount: %d |", stats.dns_errcount);
     fprintf(stderr, "remote-close-error: %d |", stats.remote_close_count);

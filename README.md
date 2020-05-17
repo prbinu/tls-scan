@@ -19,6 +19,7 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
 * Script friendly output - Can be combined with other tools to analyze the scan results
+* Detailed run time stats for tracking progress and performance/charts
 
 This tool is primarily for collecting TLS cipher and X.509 certificate data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
@@ -244,6 +245,7 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 --tls-old | Mozilla's old (backward compatible cipher list).
 --no-parallel-enum |Disable parallel cipher and tls version enumeration. Parallel scan is performed only with '--connect' option.
 --meta-info | Print program meta information and exit. Useful if you wanted to see predefined cipher options.
+--stats-outfile=\<file\> | Enable run-time scan stats and save it to a file
 
 ## Caveats
 
