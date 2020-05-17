@@ -36,7 +36,7 @@ struct tls_cert;
 
 typedef struct stats {
   int hcount;
-  int dnscount;
+  int connect_count;
   int dns_errcount;
   int connect_err_count;
   int timeout_count;
@@ -108,6 +108,8 @@ typedef struct options {
   char infile[OPT_STRLEN];
   char outfile[OPT_STRLEN];
   FILE *certlog_fp;
+  char stats_outfile[OPT_STRLEN];
+  FILE *statsfile_fp;
   size_t batch_size;
   uint32_t timeout;
   struct timespec ts_sleep;

@@ -576,6 +576,20 @@ void ts_scan_end(client_t * cli, scan_type_t st)
     break;
   }
 
+  if ((op.outfile[0] != 0) || (op.stats_outfile[0] != 0)) {
+    uint64_t et = ts_elapsed_time(stats.start_time);
+
+    ++stats.hcount;
+    if (op.outfile[0] != 0) {
+      fprintf(stdout, "\rstatus: %d/%d | elapsed-time: %"PRIu64" secs | tls-handshake: %d | host: %s          ", stats.hcount, stats.connect_count, et/1000000, stats.gross_tls_handshake, cli->host);
+      fflush(stdout);
+    }
+
+    if (op.stats_outfile[0] != 0) {
+      fprintf(cli->op->statsfile_fp, "%"PRIu64" %d %d %d %d %d %d %d %d %d %d\n", et/1000000, stats.hcount, stats.connect_count, stats.network_err_count, stats.dns_errcount, stats.remote_close_count, stats.error_count, stats.connect_err_count, stats.timeout_count, stats.tls_handshake, stats.gross_tls_handshake);
+    }
+  }
+
   ts_scan_start(cli);
   return;
 }
@@ -1244,7 +1258,7 @@ void ts_scan_start(client_t * cli)
   }
 
   ts_scan_connect(cli, cli->op->ip_input);
-  stats.dnscount++;
+  stats.connect_count++;
   return;
 }
 
@@ -1337,6 +1351,8 @@ void print_usage()
   printf("  %s\n", "    --no-parallel-enum   Disable parallel cipher and tls version enumeration.");
   printf("  %s\n", "                         Parallel scan is performed only with -connect option");
   printf("  %s\n", "    --meta-info          Print program meta information and exit");
+  printf("  %s\n", "    --stats-outfile=<file>");
+  printf("  %s\n", "                         Enable run-time scan stats and save it to a file");
 
   printf("\n");
   printf("%s\n", "NOTE: If you pipe the output to another process, redirect stderr to /dev/null");
@@ -1408,6 +1424,7 @@ int main(int argc, char **argv)
     {"pretty", no_argument, 0, 'n'},
     {"nameserver", required_argument, 0, 'N'},
     {"meta-info", no_argument, 0, 'M'},
+    {"stats-outfile", required_argument, 0, 'R'},
     {0, 0, 0, 0}
   };
 
@@ -1445,7 +1462,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:vt:S:o:N:123456Q789VXnOjMH",
+                            "P:h:p:c:C:eUruT:as:b:vt:S:o:N:R:123456Q789VXnOjMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1526,6 +1543,9 @@ int main(int argc, char **argv)
       break;
     case 'o':
       snprintf(op.outfile, OPT_STRLEN, "%s", optarg);
+      break;
+    case 'R':
+      snprintf(op.stats_outfile, OPT_STRLEN, "%s", optarg);
       break;
     case 'O':
       op.stdout = true;
@@ -1615,6 +1635,12 @@ int main(int argc, char **argv)
   if (strlen(op.outfile) > 0) {
     op.certlog_fp = fopen(op.outfile, "w");
     assert(op.certlog_fp != NULL);
+  }
+
+  if (strlen(op.stats_outfile) > 0) {
+    op.statsfile_fp = fopen(op.stats_outfile, "w");
+    assert(op.statsfile_fp != NULL);
+    fprintf(op.statsfile_fp, "elapsed-time completed connect_count network-error dns-errcount remote-close-error unknown-error connect-error timeout-error tls-handshake gross-tls-handshake\n");
   }
 
   in_handle.eof = false;
@@ -1729,8 +1755,8 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d)\n", op.cipher_enum_count);
-    fprintf(stderr, " [%d] dns-lookup          : %d\n",
-                                                          pid, stats.dnscount);
+    fprintf(stderr, " [%d] connect_count       : %d\n",
+                                                          pid, stats.connect_count);
     fprintf(stderr, " [%d] network-error       : %d\n",
                                                  pid, stats.network_err_count);
     fprintf(stderr, " [%d] dns-errcount        : %d\n",
@@ -1766,7 +1792,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d) |", op.cipher_enum_count);
-    fprintf(stderr, "dns-lookup: %d |", stats.dnscount);
+    fprintf(stderr, "connect_count: %d |", stats.connect_count);
     fprintf(stderr, "network-error: %d |", stats.network_err_count);
     fprintf(stderr, "dns-errcount: %d |", stats.dns_errcount);
     fprintf(stderr, "remote-close-error: %d |", stats.remote_close_count);
@@ -1783,7 +1809,7 @@ int main(int argc, char **argv)
                                                                    et%1000000);
   }
 
-  if (stats.timeout_count == stats.dnscount) {
+  if (stats.timeout_count == stats.connect_count) {
     fprintf(stderr, "Warning: Are you talking the right protocol? \
  The timeout error could be because of wrong protocol option.\n");
   }
@@ -1791,6 +1817,10 @@ int main(int argc, char **argv)
   fclose(op.certlog_fp);
   if (op.session_in_fp) {
     fclose(op.session_in_fp);
+  }
+
+  if (op.outfile[0] != 0) {
+    fprintf(stdout, "\n");
   }
 
   return 0;
