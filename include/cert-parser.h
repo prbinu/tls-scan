@@ -104,5 +104,6 @@ const char *get_ssl_version_str(int index);
 
 /* */
 const SSL_METHOD *ts_tls_get_method(int index);
+long ts_tls_get_options(int index);
 
 #endif

@@ -515,20 +515,36 @@ const SSL_METHOD *ts_tls_get_method(int index)
     case 0:
       return SSLv2_client_method();
 #endif
-  case 1:
-    return SSLv3_client_method();
-  case 2:
-    return TLSv1_client_method();
-  case 3:
-    return TLSv1_1_client_method();
-  case 4:
-    return TLSv1_2_client_method();
-  case 5:
+    case 1:
+      return SSLv3_client_method();
+    case 2:
+      return TLSv1_client_method();
+    case 3:
+      return TLSv1_1_client_method();
+    case 4:
+      return TLSv1_2_client_method();
+    case 5:
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
-    return tlsv1_3_client_method(); //TLSv1_3_client_method();
+      return tlsv1_3_client_method(); //TLSv1_3_client_method();
 #endif
-  default:
-    return SSLv23_client_method();
+    default:
+      return SSLv23_client_method();
+  }
+}
+
+long ts_tls_get_options(int index)
+{
+  switch (index) {
+    case 1:
+      return ~SSL_OP_NO_SSLv3;
+    case 2:
+      return ~SSL_OP_NO_TLSv1;
+    case 3:
+      return ~SSL_OP_NO_TLSv1_1;
+    case 4:
+      return ~SSL_OP_NO_TLSv1_2;
+    default:
+      return SSL_OP_ALL;
   }
 }
 
@@ -611,18 +627,18 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
       }
     }
 
-// workaround to supress SSLv2 if openssl version > 1.1.x
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
-                                            get_ssl_version_str(vers[0]), fmt);
-#endif
-    for (i = 1; i < j-1; i++) {
-      fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
+    if (j != 0) {
+      i = 0;
+      if (j > 1) {
+        for (i = 0; i < j-1; i++) {
+          fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
                                             get_ssl_version_str(vers[i]), fmt);
-    }
+        }
+      }
 
-    fprintf(fp, "%.*s\"%s\"%c%.*s],%c", FMT_INDENT(4),
+      fprintf(fp, "%.*s\"%s\"%c%.*s],%c", FMT_INDENT(4),
                         get_ssl_version_str(vers[i]), fmt, FMT_INDENT(2), fmt);
+    }
   }
 
   if (op->cipher_enum) {

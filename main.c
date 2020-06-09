@@ -216,6 +216,13 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
   } else if (ST_TLS_VERSION == st) {
     // TODO set cipher to ciphers based on tls version
     cipher = default_ciphers;
+
+    if (cli->tls_ver_index == 0) {
+      cipher = sslv2_ciphers;
+    }
+
+    SSL_set_options(ssl, ts_tls_get_options(cli->tls_ver_index));
+
     if (!SSL_set_ssl_method(ssl, ts_tls_get_method(cli->tls_ver_index))) {
      fprintf(stderr, "%s %d %s\n", "SSL_set_ssl_method failed, skipping..",
                                                    cli->tls_ver_index, cipher);
@@ -1792,7 +1799,7 @@ int main(int argc, char **argv)
     }
 
     fprintf(stderr, " (%d)\n", op.cipher_enum_count);
-    fprintf(stderr, " [%d] host-count       : %d\n",
+    fprintf(stderr, " [%d] host-count          : %d\n",
                                                           pid, stats.connect_count);
     fprintf(stderr, " [%d] network-error       : %d\n",
                                                  pid, stats.network_err_count);
