@@ -165,6 +165,9 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 }
 
 ```
+  
+|     Useful Tip: Use `--concurrency=<n>` option if you want to scan multiple target servers in parallel. |
+|----------------|
 
 ## Usage
 
