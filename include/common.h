@@ -73,6 +73,7 @@ typedef enum {
   ST_GNUTLS_CERT,
   ST_GNUTLS_VERSION,
   ST_GNUTLS_CIPHER,
+  ST_GNUTLS_1_2CHACHA_CIPHER, // TLS1.2 with CHACHA cipher
   ST_CERT_PRINT
 } scan_type_t;
 

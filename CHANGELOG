@@ -6,6 +6,7 @@ Version 1.4.3 (2020-06-09)
 * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.3
 
 * Fix the TLS version enum bug
+* Support TLSv1.2 CHACHA cipher scans
 
 Version 1.4.2 (2020-05-17)
 -----------------------------------

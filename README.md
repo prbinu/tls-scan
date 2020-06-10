@@ -252,7 +252,6 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 
 ## Caveats
 
-* The openssl fork we use doesn't support TLS 1.2 CHACHA ciphers (tracking issue: [#38](https://github.com/PeterMosmans/openssl/issues/38)). However CHACHA ciphers works with our TLS 1.3 version scan.
 * The following ciphers are currently disabled: ```SRP:PSK```
 * Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
 

@@ -518,6 +518,7 @@ scan_type_t ts_scan_next(client_t *cli)
     if (cli->tls_ver_index+1 < MAX_OPENSSL_TLS_VERSION) {
       cli->tls_ver_index++;
       nanosleep(&cli->op->ts_sleep, NULL);
+      cli->scan_engine = SE_OPENSSL;
       cli->state = ST_TLS_VERSION;
       return ST_TLS_VERSION;
     }
@@ -538,8 +539,18 @@ scan_type_t ts_scan_next(client_t *cli)
   if (cli->op->cipher_enum) {
     if (cli->cipher_index+1 < cli->op->cipher_enum_count) {
       cli->cipher_index++;
+
+      // scan CHACHA ciphers using gnults
+      if (strstr(cli->op->cipher_enum_list[cli->cipher_index], "CHACHA") != NULL) {
+        nanosleep(&cli->op->ts_sleep, NULL);
+        cli->scan_engine = SE_GNUTLS;
+        cli->state = ST_GNUTLS_1_2CHACHA_CIPHER;
+        return ST_GNUTLS_1_2CHACHA_CIPHER;
+      }
+
       // continue with same host/ip, but different cipher
       nanosleep(&cli->op->ts_sleep, NULL);
+      cli->scan_engine = SE_OPENSSL;
       cli->state = ST_CIPHER;
       return ST_CIPHER;
     }
@@ -654,6 +665,7 @@ void ts_scan_disconnect(client_t * cli)
 
     case ST_GNUTLS_VERSION:
     case ST_GNUTLS_CIPHER:
+    case ST_GNUTLS_1_2CHACHA_CIPHER:
       ts_scan_connect(cli, true);
       break;
 
@@ -1239,8 +1251,16 @@ void ts_scan_parallel_host_scan(client_t *cli)
         c->tls_ver_index = MAX_TLS_VERSION;
         c->tls_cert = cli->tls_cert;
         c->tls_cert->reference_count++;
-        c->scan_engine = SE_OPENSSL;
-        c->state = ST_CIPHER;
+
+        // scan CHACHA ciphers using gnutls
+        if (strstr(cli->op->cipher_enum_list[c->cipher_index], "CHACHA") != NULL) {
+          c->scan_engine = SE_GNUTLS;
+          c->state = ST_GNUTLS_1_2CHACHA_CIPHER;
+        } else {
+          c->scan_engine = SE_OPENSSL;
+          c->state = ST_CIPHER;
+        }
+
         ts_adapter_init(c);
         ts_scan_connect(c, true);
       }

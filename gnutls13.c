@@ -29,7 +29,29 @@ static const char *tlsv1_3_gnutls_ciphers_str = "NONE:+CTYPE-ALL:+COMP-ALL:+GROU
 static const char *tlsv1_3_gnutls_ciphers[TLS1_3_MAX_CIPHER_COUNT] = { "AES-128-GCM", "AES-256-GCM", "CHACHA20-POLY1305", "AES-128-CCM", "AES-128-CCM-8"};
 static const char *tlsv1_3_openssl_ciphers[TLS1_3_MAX_CIPHER_COUNT] = { "TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256", "TLS_AES_128_CCM_SHA256", "TLS_AES_128_CCM_8_SHA256" };
 
+#define TLS1_2_MAX_CHACHA_CIPHER_COUNT 3
+
+static const char *tlsv1_2_gnutls_chacha_ciphers[TLS1_2_MAX_CHACHA_CIPHER_COUNT] = {
+  "NONE:+VERS-TLS1.2:-CIPHER-ALL:+CHACHA20-POLY1305:+MAC-ALL:+SIGN-ALL:+COMP-ALL:+ECDHE-ECDSA:+CURVE-ALL",
+  "NONE:+VERS-TLS1.2:-CIPHER-ALL:+CHACHA20-POLY1305:+MAC-ALL:+SIGN-ALL:+COMP-ALL:+ECDHE-RSA:+CURVE-ALL",
+  "NONE:+VERS-TLS1.2:-CIPHER-ALL:+CHACHA20-POLY1305:+MAC-ALL:+SIGN-ALL:+COMP-ALL:+DHE-RSA:+CURVE-ALL",
+};
+
+static const char *tlsv1_2_openssl_chacha_ciphers[TLS1_2_MAX_CHACHA_CIPHER_COUNT] = { "ECDHE-RSA-CHACHA20-POLY1305-OLD", "ECDHE-ECDSA-CHACHA20-POLY1305-OLD", "DHE-RSA-CHACHA20-POLY1305-OLD" };
+
 #define CHECK(x) assert((x)>=0)
+
+// tls 1_2 chacha cipher index for gnutls
+static const char*  gnutls1_2_chacha_priority_str(const char *openssl_cipher)
+{
+  for (int i=0; i < TLS1_2_MAX_CHACHA_CIPHER_COUNT; i++) {
+    if (strcmp(tlsv1_2_openssl_chacha_ciphers[i], openssl_cipher) == 0) {
+      return tlsv1_2_gnutls_chacha_ciphers[i];
+    }
+  }
+
+  return NULL;
+}
 
 void gnutls13_init(struct options *op) {
   op->cipher1_3_enum_count = 0;
@@ -113,15 +135,29 @@ bool _gnutls13_session_init(client_t *cli, int sd, const char *priority)
   return true;
 }
 
-int gnutls13_session_init(client_t *cli, int sd) {
+int gnutls13_session_init(client_t *cli, int sd)
+{
+
   if (cli->state == ST_GNUTLS_VERSION) {
-    //if ((cli->op->tls_vers_enum) && (!cli->op->ssl2) && (!cli->op->ssl3) && (!cli->op->tls1)) {
     _gnutls13_session_init(cli, sd, tlsv1_3_gnutls_ciphers_str);
   } else if (cli->state == ST_GNUTLS_CIPHER) {
     char priority[512];
     if (cli->cipher1_3_index < cli->op->cipher1_3_enum_count) {
       snprintf(priority, 512, "NONE:+CTYPE-ALL:+COMP-ALL:+GROUP-ALL:+SIGN-ALL:+KX-ALL:+MAC-ALL:+VERS-TLS1.3:+%s", cli->op->cipher1_3_enum_list[cli->cipher1_3_index]);
       _gnutls13_session_init(cli, sd, priority);
+    } else {
+      assert(0);
+    }
+  } else if (cli->state == ST_GNUTLS_1_2CHACHA_CIPHER) {
+    char priority[512];
+    if (cli->cipher1_3_index < cli->op->cipher1_3_enum_count) {
+      const char *p = gnutls1_2_chacha_priority_str(cli->op->cipher_enum_list[cli->cipher_index]);
+      if (p) {
+        snprintf(priority, 512, "%s", p);
+        _gnutls13_session_init(cli, sd, priority);
+      } else {
+        assert(0);
+      }
     } else {
       assert(0);
     }
@@ -132,7 +168,8 @@ int gnutls13_session_init(client_t *cli, int sd) {
   return 0;
 }
 
-void gnutls13_session_deinit(client_t *cli) {
+void gnutls13_session_deinit(client_t *cli)
+{
   // TODO - check err status and log to stderr
   gnutls_deinit(cli->session);
 }
@@ -182,6 +219,8 @@ retry:
     } else {
       assert(0);
     }
+  } else if (cli->state == ST_GNUTLS_1_2CHACHA_CIPHER) {
+    cli->tls_cert->cipher_suite_support[cli->cipher_index] = true;
   } else {
     assert(0);
   }
