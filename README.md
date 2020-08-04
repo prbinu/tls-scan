@@ -43,6 +43,13 @@ All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/mast
 * [pkg-config](https://pkg-config.freedesktop.org/releases/?C=M;O=D)
 * [gcc](http://railsapps.github.io/xcode-command-line-tools.html)
 
+On Ubuntu:
+
+```sh
+% sudo apt-get update
+% sudo apt-get install autoconf automake libtool pkg-config gcc unzip -y
+```
+
 ### Linux
 
 *Build* :
