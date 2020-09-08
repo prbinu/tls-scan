@@ -548,14 +548,61 @@ long ts_tls_get_options(int index)
   }
 }
 
-void ts_json_escape(char *data, size_t length, char espchar)
+size_t ts_json_escape(char *data, size_t length, char *outbuffer,
+		                                  size_t outbuffer_length)
 {
-  int i;
+  int i, j=0;
   for (i = 0; i < length; i++) {
-    if (data[i] == espchar) {
-      data[i] = ' ';
+    switch (data[i]) {
+      case '\\':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '\\';
+        break;
+
+      case '\n':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'n';
+        break;
+
+      case '"':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '"';
+        break;
+
+      case '\t':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 't';
+        break;
+
+      case '\r':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'r';
+        break;
+
+      case '\f':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'f';
+        break;
+
+      case '\b':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'b';
+        break;
+
+      default:
+        outbuffer[j++] = data[i];
+        break;
     }
+
+    if (j >= outbuffer_length-2) {
+      outbuffer[j] = 0;
+      return j;
+    }
+
   }
+
+  outbuffer[j] = 0;
+  return j;
 }
 
 #define FMT_INDENT(n) (n) * sp_flag, sp
@@ -762,6 +809,9 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   }
 
   int i = 0;
+  size_t outbuffer_length = 1024;
+  size_t oblen = 0;
+  char outbuffer[outbuffer_length];
   while (i < tls_cert->x509_chain_depth) {
 
     if (i == CERT_CHAIN_MAXLEN) {
@@ -774,23 +824,22 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
     if (tls_cert->x509[i].subject) {
       BIO_get_mem_ptr(tls_cert->x509[i].subject, &bptr);
-      // TODO - temp fix
-      ts_json_escape(bptr->data, bptr->length, '\"');
-      ts_json_escape(bptr->data, bptr->length, '\\');
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"subject\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].issuer) {
       BIO_get_mem_ptr(tls_cert->x509[i].issuer, &bptr);
 
       if (!tls_cert->verify_cert) {
-        ts_json_escape(bptr->data, bptr->length, '\"');
-        ts_json_escape(bptr->data, bptr->length, '\\');
+        oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+		                                             outbuffer_length);
       }
 
       fprintf(fp, "%.*s\"issuer\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].subject_cname) {
@@ -803,13 +852,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
       if (tls_cert->san) {
         BIO_get_mem_ptr(tls_cert->san, &bptr);
 
-        if (!tls_cert->verify_cert) {
-          ts_json_escape(bptr->data, bptr->length, '\n');
-        }
+	oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
 
-        ts_json_escape(bptr->data, bptr->length, '\\');
         fprintf(fp, "%.*s\"subjectAltName\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
       }
     }
 
@@ -852,9 +899,10 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
     if (tls_cert->x509[i].name_constr) {
       BIO_get_mem_ptr(tls_cert->x509[i].name_constr, &bptr);
-      ts_json_escape(bptr->data, bptr->length, '\n');
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"nameConstraints\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].subject_keyid) {
