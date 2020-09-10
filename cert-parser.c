@@ -551,6 +551,7 @@ long ts_tls_get_options(int index)
 size_t ts_json_escape(char *data, size_t length, char *outbuffer,
 		                                  size_t outbuffer_length)
 {
+
   int i, j=0;
   for (i = 0; i < length; i++) {
     switch (data[i]) {
@@ -804,7 +805,14 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
                            bool_to_str(tls_cert->verify_ocsp_basic), fmt);
   }
 
-  if (tls_cert->x509_chain_depth > 0) {
+  if (tls_cert->x509_chain_depth <= 0) {
+    fprintf(fp, "%.*s\"ocspStapled\": %s%c", FMT_INDENT(2),
+                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
+  } else {
+    fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
+                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
+
+
     fprintf(fp, "%.*s\"certificateChain\": [%c", FMT_INDENT(2), fmt);
   }
 
@@ -844,8 +852,10 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
     if (tls_cert->x509[i].subject_cname) {
       BIO_get_mem_ptr(tls_cert->x509[i].subject_cname, &bptr);
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"subjectCN\": \"%.*s\",%c", FMT_INDENT(4),
-                                         (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (0 == i) {
