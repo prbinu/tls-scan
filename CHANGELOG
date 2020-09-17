@@ -1,6 +1,12 @@
 tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 
+Version 1.4.6 (2020-09-16)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.6
+
+* Fix JSON outout encode bug - escape all control chars (rfc4627) (#38)
+
 Version 1.4.5 (2020-09-09)
 Version 1.4.4 (2020-09-08)
 -----------------------------------

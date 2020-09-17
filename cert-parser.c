@@ -548,16 +548,48 @@ long ts_tls_get_options(int index)
   }
 }
 
+char json_control_char_map[33][7] = {
+  "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006", "\\u0007",
+  "\\u0008", "\\u0009", "\\u000A", "\\u000B", "\\u000C", "\\u000D", "\\u000E", "\\u000F",
+  "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+  "\\u0018", "\\u0019", "\\u001A", "\\u001B", "\\u001C", "\\u001D", "\\u001E", "\\u001F",
+};
+
 size_t ts_json_escape(char *data, size_t length, char *outbuffer,
 		                                  size_t outbuffer_length)
 {
-
   int i, j=0;
   for (i = 0; i < length; i++) {
+
+    if (j >= outbuffer_length-6) {
+      outbuffer[j] = 0;
+      return j;
+    }
+
+    // escape control charactors; ref: https://www.ietf.org/rfc/rfc4627.txt
+    if (((data[i] > 0) && (data[i] < 8)) || (data[i] == 11) ||
+                                            ((data[i]  > 13) && (data[i] < 32))) {
+      strncpy(&outbuffer[j], json_control_char_map[(int)data[i]], 6);
+      j += 6;
+      continue;
+    }
+
+    // escape DEL (0x7F)
+    if (data[i] == 127) {
+      strncpy(&outbuffer[j], "\\u007F", 6);
+      j += 6;
+      continue;
+    }
+
     switch (data[i]) {
       case '\\':
         outbuffer[j++] = '\\';
         outbuffer[j++] = '\\';
+        break;
+
+      case '/':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '/';
         break;
 
       case '\n':
@@ -594,12 +626,6 @@ size_t ts_json_escape(char *data, size_t length, char *outbuffer,
         outbuffer[j++] = data[i];
         break;
     }
-
-    if (j >= outbuffer_length-2) {
-      outbuffer[j] = 0;
-      return j;
-    }
-
   }
 
   outbuffer[j] = 0;
@@ -817,7 +843,7 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   }
 
   int i = 0;
-  size_t outbuffer_length = 1024;
+  size_t outbuffer_length = 4096;
   size_t oblen = 0;
   char outbuffer[outbuffer_length];
   while (i < tls_cert->x509_chain_depth) {
