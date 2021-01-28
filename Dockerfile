@@ -1,21 +1,31 @@
+FROM ubuntu:16.04 AS builder
+
+RUN set -xeu; \
+    apt-get update; \
+    apt-get upgrade; \
+    apt-get install -y \
+        build-essential \
+        autoconf \
+        automake \
+        pkg-config \
+        curl \
+        zip \
+        libtool
+
+COPY . /usr/local/src/tls-scan
+RUN set -xeu; \
+    cd /usr/local/src/tls-scan; \
+    ./build-x86-64.sh
+
+
 FROM ubuntu:16.04
 
-RUN apt-get update -y
-RUN apt-get upgrade -y
+RUN useradd -rU tls-scan
+USER tls-scan
 
-RUN apt-get install build-essential -y
-RUN apt-get install curl -y
-RUN apt-get install zip -y
-RUN apt-get install autoconf -y
-RUN apt-get install libtool -y
-RUN apt-get install automake -y
-RUN apt-get install pkg-config -y
-RUN apt-get install jq -y
-
-ENV TS_INSTALLDIR /usr/local
-ADD ./build-x86-64.sh build-x86-64.sh
-RUN ./build-x86-64.sh
+WORKDIR /usr/local/share/tls-scan/
+COPY --from=builder /usr/local/src/tls-scan/build-root/bin/tls-scan /usr/local/bin/tls-scan
+ADD --chown=tls-scan:tls-scan https://curl.haxx.se/ca/cacert.pem ./ca-bundle.crt
 
 ENTRYPOINT ["tls-scan"]
 CMD ["--help"]
-
