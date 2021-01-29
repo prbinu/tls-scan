@@ -2,7 +2,6 @@ FROM ubuntu:16.04 AS builder
 
 RUN set -xeu; \
     apt-get update; \
-    apt-get upgrade; \
     apt-get install -y \
         build-essential \
         autoconf \
