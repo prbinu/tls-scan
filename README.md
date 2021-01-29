@@ -99,7 +99,7 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 *Test* :
 
 ```sh
-% docker run tls-scan --connect=yahoo.com:443 --cacert=/usr/local/etc/tls-scan/ca-bundle.crt --pretty
+% docker run --rm tls-scan --connect=example.com:443 --all --pretty
 ```
 
 ## Example
