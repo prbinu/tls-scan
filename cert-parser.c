@@ -280,7 +280,7 @@ static const char *bool_to_str(bool b)
   }
 }
 
-static const char *get_ssl_version_str(int index)
+const char *get_ssl_version_str(int index)
 {
   switch (index) {
   case SSLv2:
@@ -515,31 +515,121 @@ const SSL_METHOD *ts_tls_get_method(int index)
     case 0:
       return SSLv2_client_method();
 #endif
-  case 1:
-    return SSLv3_client_method();
-  case 2:
-    return TLSv1_client_method();
-  case 3:
-    return TLSv1_1_client_method();
-  case 4:
-    return TLSv1_2_client_method();
-  case 5:
+    case 1:
+      return SSLv3_client_method();
+    case 2:
+      return TLSv1_client_method();
+    case 3:
+      return TLSv1_1_client_method();
+    case 4:
+      return TLSv1_2_client_method();
+    case 5:
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
-    return tlsv1_3_client_method(); //TLSv1_3_client_method();
+      return tlsv1_3_client_method(); //TLSv1_3_client_method();
 #endif
-  default:
-    return SSLv23_client_method();
+    default:
+      return SSLv23_client_method();
   }
 }
 
-void ts_json_escape(char *data, size_t length, char espchar)
+long ts_tls_get_options(int index)
 {
-  int i;
+  switch (index) {
+    case 1:
+      return ~SSL_OP_NO_SSLv3;
+    case 2:
+      return ~SSL_OP_NO_TLSv1;
+    case 3:
+      return ~SSL_OP_NO_TLSv1_1;
+    case 4:
+      return ~SSL_OP_NO_TLSv1_2;
+    default:
+      return SSL_OP_ALL;
+  }
+}
+
+char json_control_char_map[33][7] = {
+  "\\u0000", "\\u0001", "\\u0002", "\\u0003", "\\u0004", "\\u0005", "\\u0006", "\\u0007",
+  "\\u0008", "\\u0009", "\\u000A", "\\u000B", "\\u000C", "\\u000D", "\\u000E", "\\u000F",
+  "\\u0010", "\\u0011", "\\u0012", "\\u0013", "\\u0014", "\\u0015", "\\u0016", "\\u0017",
+  "\\u0018", "\\u0019", "\\u001A", "\\u001B", "\\u001C", "\\u001D", "\\u001E", "\\u001F",
+};
+
+size_t ts_json_escape(char *data, size_t length, char *outbuffer,
+		                                  size_t outbuffer_length)
+{
+  int i, j=0;
   for (i = 0; i < length; i++) {
-    if (data[i] == espchar) {
-      data[i] = ' ';
+
+    if (j >= outbuffer_length-6) {
+      outbuffer[j] = 0;
+      return j;
+    }
+
+    // escape control charactors; ref: https://www.ietf.org/rfc/rfc4627.txt
+    if (((data[i] > 0) && (data[i] < 8)) || (data[i] == 11) ||
+                                            ((data[i]  > 13) && (data[i] < 32))) {
+      strncpy(&outbuffer[j], json_control_char_map[(int)data[i]], 6);
+      j += 6;
+      continue;
+    }
+
+    // escape DEL (0x7F)
+    if (data[i] == 127) {
+      strncpy(&outbuffer[j], "\\u007F", 6);
+      j += 6;
+      continue;
+    }
+
+    switch (data[i]) {
+      case '\\':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '\\';
+        break;
+
+      case '/':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '/';
+        break;
+
+      case '\n':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'n';
+        break;
+
+      case '"':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = '"';
+        break;
+
+      case '\t':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 't';
+        break;
+
+      case '\r':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'r';
+        break;
+
+      case '\f':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'f';
+        break;
+
+      case '\b':
+        outbuffer[j++] = '\\';
+        outbuffer[j++] = 'b';
+        break;
+
+      default:
+        outbuffer[j++] = data[i];
+        break;
     }
   }
+
+  outbuffer[j] = 0;
+  return j;
 }
 
 #define FMT_INDENT(n) (n) * sp_flag, sp
@@ -605,30 +695,24 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     int i, j = 0;
     int vers[MAX_TLS_VERSION];
 
-    for (i = 0; i < MAX_OPENSSL_TLS_VERSION; i++) {
+    for (i = 0; i < MAX_TLS_VERSION; i++) {
       if (tls_cert->tls_ver_support[i]) {
         vers[j++] = i;
       }
     }
 
-    // include tls1_3
-    if (tls_cert->tls1_3_ver_support) {
-      vers[j++] = i;
-    }
-
-
-// workaround to supress SSLv2 if openssl version > 1.1.x
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-    fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
-                                            get_ssl_version_str(vers[0]), fmt);
-#endif
-    for (i = 1; i < j-1; i++) {
-      fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
+    if (j != 0) {
+      i = 0;
+      if (j > 1) {
+        for (i = 0; i < j-1; i++) {
+          fprintf(fp, "%.*s\"%s\", %c", FMT_INDENT(4),
                                             get_ssl_version_str(vers[i]), fmt);
-    }
+        }
+      }
 
-    fprintf(fp, "%.*s\"%s\"%c%.*s],%c", FMT_INDENT(4),
+      fprintf(fp, "%.*s\"%s\"%c%.*s],%c", FMT_INDENT(4),
                         get_ssl_version_str(vers[i]), fmt, FMT_INDENT(2), fmt);
+    }
   }
 
   if (op->cipher_enum) {
@@ -667,15 +751,15 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     if (s13 > 0) {
       for (i = 0; i < s13-1; i++) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
       }
 
       if (s > 0) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
       } else {
         fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                      op->cipher1_3_enum_list[supported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[supported1_3[i]], fmt);
 
       }
     }
@@ -683,11 +767,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     if (s > 0) {
       for (i = 0; i < s-1; i++) {
         fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                      op->cipher_enum_list[supported[i]], fmt);
+                              op->cipher_enum_list[supported[i]], fmt);
       }
 
       fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                      op->cipher_enum_list[supported[i]], fmt);
+                              op->cipher_enum_list[supported[i]], fmt);
     }
 
     if (op->show_unsupported_ciphers) {
@@ -697,15 +781,15 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
       if (u13 > 0) {
         for (i = 0; i < u13-1; i++) {
           fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
         }
 
         if (u > 0) {
           fprintf(fp, "%.*s\"%s\",%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
         } else {
           fprintf(fp, "%.*s\"%s\"%c", FMT_INDENT(6),
-                                        op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
+                              op->cipher1_3_enum_list[unsupported1_3[i]], fmt);
 
         }
       }
@@ -733,11 +817,11 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
   } else {
     fprintf(fp, "%.*s\"verifyCertResult\": false,%c", FMT_INDENT(2), fmt);
     fprintf(fp, "%.*s\"verifyCertError\": \"%s\",%c",
-                              FMT_INDENT(2), tls_cert->verify_cert_errmsg, fmt);
+                             FMT_INDENT(2), tls_cert->verify_cert_errmsg, fmt);
   }
 
   fprintf(fp, "%.*s\"verifyHostResult\": %s,%c",
-                        FMT_INDENT(2), bool_to_str(tls_cert->verify_host), fmt);
+                       FMT_INDENT(2), bool_to_str(tls_cert->verify_host), fmt);
 
   fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
                            bool_to_str(tls_cert->ocsp_stapling_response), fmt);
@@ -747,11 +831,21 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
                            bool_to_str(tls_cert->verify_ocsp_basic), fmt);
   }
 
-  if (tls_cert->x509_chain_depth > 0) {
+  if (tls_cert->x509_chain_depth <= 0) {
+    fprintf(fp, "%.*s\"ocspStapled\": %s%c", FMT_INDENT(2),
+                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
+  } else {
+    fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
+                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
+
+
     fprintf(fp, "%.*s\"certificateChain\": [%c", FMT_INDENT(2), fmt);
   }
 
   int i = 0;
+  size_t outbuffer_length = 4096;
+  size_t oblen = 0;
+  char outbuffer[outbuffer_length];
   while (i < tls_cert->x509_chain_depth) {
 
     if (i == CERT_CHAIN_MAXLEN) {
@@ -764,42 +858,41 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
     if (tls_cert->x509[i].subject) {
       BIO_get_mem_ptr(tls_cert->x509[i].subject, &bptr);
-      // TODO - temp fix
-      ts_json_escape(bptr->data, bptr->length, '\"');
-      ts_json_escape(bptr->data, bptr->length, '\\');
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"subject\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].issuer) {
       BIO_get_mem_ptr(tls_cert->x509[i].issuer, &bptr);
 
       if (!tls_cert->verify_cert) {
-        ts_json_escape(bptr->data, bptr->length, '\"');
-        ts_json_escape(bptr->data, bptr->length, '\\');
+        oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+		                                             outbuffer_length);
       }
 
       fprintf(fp, "%.*s\"issuer\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].subject_cname) {
       BIO_get_mem_ptr(tls_cert->x509[i].subject_cname, &bptr);
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"subjectCN\": \"%.*s\",%c", FMT_INDENT(4),
-                                         (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (0 == i) {
       if (tls_cert->san) {
         BIO_get_mem_ptr(tls_cert->san, &bptr);
 
-        if (!tls_cert->verify_cert) {
-          ts_json_escape(bptr->data, bptr->length, '\n');
-        }
+	oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
 
-        ts_json_escape(bptr->data, bptr->length, '\\');
         fprintf(fp, "%.*s\"subjectAltName\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
       }
     }
 
@@ -842,9 +935,10 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
     if (tls_cert->x509[i].name_constr) {
       BIO_get_mem_ptr(tls_cert->x509[i].name_constr, &bptr);
-      ts_json_escape(bptr->data, bptr->length, '\n');
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+                                                           outbuffer_length);
       fprintf(fp, "%.*s\"nameConstraints\": \"%.*s\",%c", FMT_INDENT(4),
-                                           (int)bptr->length, bptr->data, fmt);
+                                           (int)oblen, outbuffer, fmt);
     }
 
     if (tls_cert->x509[i].subject_keyid) {

@@ -9,18 +9,19 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 ## Features
 
 * **New: Support for TLSv1.3**
-* Can detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
-* Extract X.509 certificate from the server and print it in JSON format
-* Certificate and host name verification checks
+* **TLS and StartTLS protocol support: SMTP, IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, RDP, POSTGRES, MYSQL**
+* Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers (say scan IoT devices at scale)
+* Detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
 * Cipher and TLS version enumeration
+* Extract X.509 certificate fields from the target server and print it in JSON format
+* Certificate and host name verification checks
 * TLS compression checks
 * Session reuse tests
 * Certificate revocation checks with stapled OCSP response
-* Support TLS, STARTTLS SMTP and MYSQL protocols
-* Can operate at scale with the ability to concurrently scan large number of servers
-* Can be easily combined with other tools to analyze the scan results
+* Script friendly output - Can be combined with other tools to analyze the scan results
+* Detailed run time stats for tracking progress and performance/charts
 
-This tool is primarly for collecting data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
+This tool is primarily for collecting TLS cipher and X.509 certificate data. The scan output can be easily combined with related tools to identify TLS misconfigurations.
 
 ## Installation
 
@@ -32,7 +33,7 @@ Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://gith
 
 ### Build From Source
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls `tls-scan`, its  dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
 
 *Build Pre-requisites* :
 
@@ -42,20 +43,29 @@ All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/mast
 * [pkg-config](https://pkg-config.freedesktop.org/releases/?C=M;O=D)
 * [gcc](http://railsapps.github.io/xcode-command-line-tools.html)
 
+On Ubuntu:
+
+```sh
+% sudo apt-get update
+% sudo apt-get install autoconf automake libtool pkg-config gcc unzip -y
+```
+
 ### Linux
 
 *Build* :
 
 ```sh
+% git clone https://github.com/prbinu/tls-scan.git
+% cd tls-scan
 % ./build-x86-64.sh
 ```
 
-The newly built tls-scan binary can be found at `./ts-build-root/bin`
+The newly built tls-scan binary can be found at `./build-root/bin`. build-x86-64.sh is a wrapper script that calls `./bootstrap.sh` to build all dependent packages. bootstrap.sh also executes the `autoreconf -i` command to generate `configure` file. Subsequently it calles the standard `./configure`, `make && make install`.
 
 *Test* :
 
 ```sh
-% cd ts-build-root/bin
+% cd build-root/bin
 % ./tls-scan --connect=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
 ```
 
@@ -68,10 +78,12 @@ If you do not have the pre-requisite packages, you can easily install those pack
 *Build* :
 
 ```sh
+% git clone https://github.com/prbinu/tls-scan.git
+% cd tls-scan
 % ./build-x86-64.sh
 ```
 
-The tls-scan binary can be found at `./ts-build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
+The tls-scan binary can be found at `./build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
 
 ### Docker
 
@@ -87,7 +99,7 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 *Test* :
 
 ```sh
-% docker run tls-scan --connect=yahoo.com:443 --cacert=/usr/local/etc/tls-scan/ca-bundle.crt --pretty
+% docker run --rm tls-scan --connect=example.com:443 --all --pretty
 ```
 
 ## Example
@@ -160,6 +172,9 @@ Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile)
 }
 
 ```
+  
+|     Useful Tip: Use `--concurrency=<n>` option if you want to scan multiple target servers in parallel. |
+|----------------|
 
 ## Usage
 
@@ -211,12 +226,13 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 |----------------|-------------|
 -H  --help | Print a usage message briefly summarizing these command-line options and the bug-reporting address, then exit.
 -c  --connect=\<arg\> | `target[:port]` to scan. target = {hostname, IPv4, [IPv6] }. IPv6 example: [::1]:443 (default port 443).
---starttls=\<protocol\> | Specify the starttls protocol. Current options: `smtp` and `mysql`. If the flag is not provided, program will choose the protocol based on the given port. Port `443`, `465`, `993` and `995` defaults to `tls`. Port `25` and `587` uses starttls `smtp` by default. Port `3306` use `mysql` SSL.
+--starttls=\<protocol\> | Supported protocols: `smtp`, `imap`, `pop3`, `ftp`, `sieve`, `nntp`, `xmpp`, `ldap`, `rdp`, `postgres`, `mysql`, `tls` (default)
 -c  --cacert=\<file\> | Root CA file for certificate validation. By default the program attempts to load `ca-bundle.crt` file from current directory.
 -C  --ciphers=\<arg\> | Ciphers to use; try `openssl ciphers` to see all ciphers. Note that this option will be overwritten by `--ssl2`, `--ssl3`, `--tls1`, `--tls1_1`, `--tls1_2` options, if provided. Example: `"ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384"`
 -e  --cipher-enum | Enumerate supported ciphers. Currently use `--tls-old` ciphers. Try `--meta-info` to find predefined cipher suite options.
 --show-unsupported-ciphers | Include unsupported ciphers in the cipher list to JSON output.
 -V  --version-enum | Enumerate supported TLS versions.
+-v  --version | Print tls-scan version and build information.
 -r  --session-reuse | Enable ssl session reuse.
 -u  --session-print | Print SSL session in PEM format to stderr. This is currently not included in the JSON output, but print seperately. This flag woould be useful if you wanted to pass SSL session to `--session-file` to test session reuse.
 -T  --session-file=\<file\> | File that contains SSL session in PEM format.
@@ -239,17 +255,15 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 --tls-old | Mozilla's old (backward compatible cipher list).
 --no-parallel-enum |Disable parallel cipher and tls version enumeration. Parallel scan is performed only with '--connect' option.
 --meta-info | Print program meta information and exit. Useful if you wanted to see predefined cipher options.
+--stats-outfile=\<file\> | Enable run-time scan stats and save it to a file
 
 ## Caveats
 
-* The openssl fork we use doesn't support TLS 1.2 CHACHA ciphers (tracking issue: [#38](https://github.com/PeterMosmans/openssl/issues/38)). However CHACHA ciphers works with our TLS 1.3 version scan.
 * The following ciphers are currently disabled: ```SRP:PSK```
 * Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
-* The TLS 1.3 scans are not asynchronous yet. Since the number of supported ciphers is in low single-digits, the performance impact is minimal. 
-* TLS 1.3 is not enabled for STARTTLS protocols yet.
 
 ## TLS 1.3 Support
-To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same prcoess space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used to scan SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2. GnuTLS is used for TLSv1.3.
+To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same process space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used for scanning SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2 and GnuTLS is used for TLSv1.3.
 
 ## Contributions
 Collaborators and pull requests are welcome!

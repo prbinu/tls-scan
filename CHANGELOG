@@ -1,0 +1,70 @@
+tls-scan -- History of changes.
+Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
+
+Version 1.4.6 (2020-09-16)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.6
+
+* Fix JSON outout encode bug - escape all control chars (rfc4627) (#38)
+
+Version 1.4.5 (2020-09-09)
+Version 1.4.4 (2020-09-08)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.5
+
+* Fix JSON outout encode bug (#38)
+
+Version 1.4.3 (2020-06-09)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.3
+
+* Fix the TLS version enum bug
+* Support TLSv1.2 CHACHA cipher scans
+
+Version 1.4.2 (2020-05-17)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.2
+
+* Add run-time stats for tracking progress and performance
+  New command-line param: `--stats-outfile`
+
+Version 1.4.1 (2020-01-05)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.1
+
+* Build - moving closer to autotools style builds
+
+Version 1.4.0 (2019-12-30)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.0
+
+* Add StartTLS RDP protocol support
+
+* Bug fix - starttls error stats counter
+
+* Add version info to tls-scan
+
+Version 1.3.0 (2019-12-28)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.3.0
+
+* Add StartTLS protocol support: IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, POSTGRES
+
+* New test/ directory with scan output for reference
+
+Version 1.2.0 (2019-12-07)
+-----------------------------------
+ * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.2.0
+
+ * Extend async/non-blocking support to TLS 1.3 version/cipher enum scans
+
+ * TLS 1.3 scan support for STARTTLS protocols
+
+Version 1.0.1 (2019-12-01)
+-----------------------------------
+ * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.0.1
+
+ * Added TLS 1.3 scan support
+
+ * GnuTLS library for 1.3+ scanning - to support both old and new ciphers, we
+   link both GnuTLS and Old OpenSSL version (statically linked).

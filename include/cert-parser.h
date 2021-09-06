@@ -80,7 +80,6 @@ struct tls_cert {
   struct x509_cert x509[CERT_CHAIN_MAXLEN];
   BIO *san;
   bool tls_ver_support[MAX_TLS_VERSION];
-  bool tls1_3_ver_support;
   bool *cipher_suite_support;
   bool cipher1_3_suite_support[TLS1_3_MAX_CIPHER_COUNT]; // tls 1.3 ciphers
   SSL_SESSION *session;
@@ -101,7 +100,10 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert, FILE *fp, bool prett
 
 void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty);
 
+const char *get_ssl_version_str(int index);
+
 /* */
 const SSL_METHOD *ts_tls_get_method(int index);
+long ts_tls_get_options(int index);
 
 #endif
