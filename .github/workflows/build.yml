@@ -1,0 +1,18 @@
+name: tls-scan build
+
+on:
+  push:
+      branches: [ main ]
+  pull_request:
+      branches: [ main ]
+
+jobs:
+  build:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v2
+      - name: install autoconf automake libtool pkg-config gcc unzip
+      run: sudo apt install -y autoconf automake libtool pkg-config gcc unzip
+      - name: build-x86-64.sh
+      run: ./build-x86-64.sh
+      
