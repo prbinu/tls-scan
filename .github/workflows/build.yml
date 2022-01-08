@@ -2,9 +2,9 @@ name: tls-scan build
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+    - main
+    - master
 
 jobs:
   build-and-test:
