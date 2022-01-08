@@ -30,7 +30,7 @@ jobs:
    
     - name: build-linux-package
       if: matrix.os == 'ubuntu-18.04'
-      echo "TLSSCAN_OS=linux" >> $GITHUB_ENV
+      run: echo "TLSSCAN_OS=linux" >> $GITHUB_ENV
       run: rm $GITHUB_WORKSPACE/tls-scan
       run: mkdir -p $GITHUB_WORKSPACE/tls-scan/man/man1
       run: cp $GITHUB_WORKSPACE/build-root/bin/tls-scan $GITHUB_WORKSPACE/tls-scan/tls-scan
@@ -40,7 +40,7 @@ jobs:
 
     - name: build-macos-packages
       if: matrix.os == 'macos-latest'
-      echo "TLSSCAN_OS=darwin" >> $GITHUB_ENV  
+      run: echo "TLSSCAN_OS=darwin" >> $GITHUB_ENV  
       run: rm $GITHUB_WORKSPACE/tls-scan
       run: mkdir -p $GITHUB_WORKSPACE/tls-scan/man/man1
       run: cp $GITHUB_WORKSPACE/build-root/bin/tls-scan $GITHUB_WORKSPACE/tls-scan/tls-scan
@@ -48,8 +48,9 @@ jobs:
       run: cp $GITHUB_WORKSPACE/build-root/etc/tls-scan/ca-bundle.crt $GITHUB_WORKSPACE/tls-scan/ca-bundle.crt
       run: tar -zcvf tls-scan-${{env.TLSSCAN_VERSION}}-${{env.TLSSCAN_OS}}-amd64.tar.gz ./tls-scan/
 
-    - name: Release
+    - name: release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
             tls-scan-${{env.TLSSCAN_VERSION}}-${{env.TLSSCAN_OS}}-amd64.tar.gz
