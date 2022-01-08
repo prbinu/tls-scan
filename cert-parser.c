@@ -712,6 +712,8 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
       fprintf(fp, "%.*s\"%s\"%c%.*s],%c", FMT_INDENT(4),
                         get_ssl_version_str(vers[i]), fmt, FMT_INDENT(2), fmt);
+    } else { // j == 0
+      fprintf(fp, "%.*s],%c", FMT_INDENT(2), fmt);    
     }
   }
 
