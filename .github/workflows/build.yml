@@ -7,10 +7,13 @@ on:
     - master
 
 jobs:
-  build-and-test:
-
-    runs-on: ubuntu-18.04
-
+  build:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-18.04
+          - macos-10.14
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
     - name: install autoconf automake libtool pkg-config gcc unzip
