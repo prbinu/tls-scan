@@ -16,7 +16,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v2
-    - name: install autoconf automake libtool pkg-config gcc unzip
+    - name: Setup build dependencies
+      if: matrix.os == 'ubuntu-18.04'
       run: sudo apt install -y autoconf automake libtool pkg-config gcc unzip
     - name: build-x86-64	
       run: ./build-x86-64.sh
