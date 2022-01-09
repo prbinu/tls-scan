@@ -1,4 +1,4 @@
-name: tls-scan build & release
+name: release
 
 on:
   push:
@@ -33,6 +33,7 @@ jobs:
     - name: build-x86-64	
       run: |
         ./build-x86-64.sh
+        grep Version -m 1 $GITHUB_WORKSPACE/CHANGELOG | awk '{printf \"TLSSCAN_VERSION=%s\", $2}' >> $GITHUB_ENV
    
     - name: build-package
       run: |

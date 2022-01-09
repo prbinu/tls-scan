@@ -833,14 +833,7 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
                            bool_to_str(tls_cert->verify_ocsp_basic), fmt);
   }
 
-  if (tls_cert->x509_chain_depth <= 0) {
-    fprintf(fp, "%.*s\"ocspStapled\": %s%c", FMT_INDENT(2),
-                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
-  } else {
-    fprintf(fp, "%.*s\"ocspStapled\": %s,%c", FMT_INDENT(2),
-                           bool_to_str(tls_cert->ocsp_stapling_response), fmt);
-
-
+  if (tls_cert->x509_chain_depth > 0) {
     fprintf(fp, "%.*s\"certificateChain\": [%c", FMT_INDENT(2), fmt);
   }
 
