@@ -1,9 +1,16 @@
 tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 
+Version 1.4.8 (2022-01-08)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.8
+
+* Fixed duplicate field (ocspStapled) in the json output
+* Migrated build from Travis to GitHub Action/Build system
+
 Version 1.4.7 (2022-01-08)
 -----------------------------------
-* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.7
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.7_2
 
 * Malformed json output for some domains (#43)
 
