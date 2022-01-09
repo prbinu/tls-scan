@@ -33,10 +33,10 @@ jobs:
     - name: build-x86-64	
       run: |
         ./build-x86-64.sh
+        grep Version -m 1 $GITHUB_WORKSPACE/CHANGELOG | awk '{printf "TLSSCAN_VERSION=%s", $2}' >> $GITHUB_ENV
    
     - name: build-package
       run: |
-        grep Version -m 1 $GITHUB_WORKSPACE/CHANGELOG | awk '{printf "TLSSCAN_VERSION=%s", $2}' >> $GITHUB_ENV
         rm $GITHUB_WORKSPACE/tls-scan
         mkdir -p $GITHUB_WORKSPACE/tls-scan/man/man1
         cp $GITHUB_WORKSPACE/build-root/bin/tls-scan $GITHUB_WORKSPACE/tls-scan/tls-scan
