@@ -108,11 +108,12 @@ make install prefix=${OUTDIR}
 
 echo "Downloading nettle_3.5.1."
 cd ${BUILDDIR}/downloads
-curl -OL https://git.lysator.liu.se/nettle/nettle/-/archive/nettle_3.5.1_release_20190627/nettle-nettle_3.5.1_release_20190627.tar.gz
+curl -OL https://ftp.gnu.org/gnu/nettle/nettle-3.5.1.tar.gz
 
 cd ${BUILDDIR}/build
-tar -zxvf ${BUILDDIR}/downloads/nettle-nettle_3.5.1_release_20190627.tar.gz
-cd nettle-nettle_3.5.1_release_20190627
+tar -zxvf ${BUILDDIR}/downloads/nettle-3.5.1.tar.gz
+cd nettle-3.5.1
+
 ./.bootstrap
 ./configure --enable-static --enable-mini-gmp --disable-openssl --disable-shared --disable-documentation LDFLAGS="-L${OUTDIR}/lib"
 make && make install prefix=${OUTDIR}
