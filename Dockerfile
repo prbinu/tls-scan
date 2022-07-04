@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 AS builder
+FROM ubuntu:18.04 AS builder
 
 RUN set -xeu; \
     apt-get update; \
@@ -17,7 +17,7 @@ RUN set -xeu; \
     ./build-x86-64.sh
 
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 RUN useradd -rU tls-scan
 USER tls-scan
