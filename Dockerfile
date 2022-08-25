@@ -1,5 +1,6 @@
-FROM ubuntu:18.04 AS builder
-
+FROM ubuntu:20.04 AS builder
+ARG DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
 RUN set -xeu; \
     apt-get update; \
     apt-get install -y \
@@ -17,7 +18,7 @@ RUN set -xeu; \
     ./build-x86-64.sh
 
 
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 RUN useradd -rU tls-scan
 USER tls-scan
