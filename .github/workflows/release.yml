@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu-18.04
+          - ubuntu-20.04
           - macos-latest
     runs-on: ${{ matrix.os }}
     steps:
@@ -19,7 +19,7 @@ jobs:
         fetch-depth: 0
 
     - name: Setup build dependencies
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-20.04'
       run: |
         echo "TLSSCAN_OS=linux" >> $GITHUB_ENV
         sudo apt install -y autoconf automake libtool pkg-config gcc unzip
