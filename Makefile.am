@@ -12,7 +12,7 @@ LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libev
 endif
 
 if DARWIN
-LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libevent.a build-root/lib/libevent_openssl.a build-root/lib/libgnutls.a build-root/lib64/libhogweed.a build-root/lib/libnettle.a -ldl
+LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libevent.a build-root/lib/libevent_openssl.a build-root/lib/libgnutls.a build-root/lib/libhogweed.a build-root/lib/libnettle.a -ldl
 AM_LDFLAGS = -lz -framework Security -framework CoreFoundation
 endif
 
