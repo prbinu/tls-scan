@@ -1,6 +1,13 @@
 tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 
+Version 1.5.0 (2023-01-04)
+-----------------------------------
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.5.0
+
+* Moved from Ubuntu 18.04 to 20.04 (https://github.com/prbinu/tls-scan/pull/48)
+* Updated zlib version to zlib-1.2.13 (https://github.com/prbinu/tls-scan/pull/50)
+
 Version 1.4.8 (2022-01-08)
 -----------------------------------
 * Tag: https://github.com/prbinu/tls-scan/releases/tag/1.4.8
