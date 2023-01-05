@@ -261,7 +261,6 @@ jq-linux64 -r 'if (.tlsVersions[] | contains("SSL")) == true then [.host, .ip, .
 ## Caveats
 
 * The following ciphers are currently disabled: ```SRP:PSK```
-* Instead of escaping JSON special chars (eg. double quotes), those characters are currently removed from the JSON output. (issue #2).
 
 ## TLS 1.3 Support
 To support old, insecure cipher scans, we are using an old openssl version that doesn't have support for TLS 1.3. So to support TLS 1.3, we need a newer openssl version (v1.1.1+). Since linking two openssl libraries to the same process space doesn't work out of box (duplicate symbols), we chose to use [GnuTLS](https://gitlab.com/gnutls/gnutls/) library for TLS 1.3+ support. In short, openssl is used for scanning SSLv2, SSLv3, TLSv1, TLSv1.1 and TLSv1.2 and GnuTLS is used for TLSv1.3.
