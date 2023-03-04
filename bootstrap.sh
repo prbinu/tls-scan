@@ -19,6 +19,7 @@ sleep 10
 set -e
 CD=`pwd`
 OS=`uname`
+ARCH=`uname -m`
 
 if [ "${OS}" != "Darwin" ] && [ "${OS}" != "Linux" ]; then
   echo "Error: ${OS} is not a currently supported platform."
@@ -56,9 +57,9 @@ fi
 
 cd ${BUILDDIR}/build
 unzip ${BUILDDIR}/downloads/${OPENSSL_VERSION}.zip
-mv openssl-${OPENSSL_VERSION} openssl-x86_64
+mv openssl-${OPENSSL_VERSION} openssl-${ARCH}
 
-cd openssl-x86_64
+cd openssl-${ARCH}
 
 if [ "${OS}" == "Darwin" ]; then
   ./Configure darwin64-x86_64-cc enable-static-engine enable-ec_nistp_64_gcc_128 enable-gost enable-idea enable-md2 enable-rc2 enable-rc5 enable-rfc3779 enable-ssl-trace enable-ssl2 enable-ssl3 enable-zlib experimental-jpake --prefix=${OUTDIR} --openssldir=${OUTDIR}/ssl
@@ -68,15 +69,19 @@ else
 
   cd ${BUILDDIR}/build
   tar -zxvf ${BUILDDIR}/downloads/${ZLIB_VERSION}.tar.gz
-  mv ${ZLIB_VERSION} zlib-x86_64
-  cd zlib-x86_64
+  mv ${ZLIB_VERSION} zlib-${ARCH}
+  cd zlib-${ARCH}
 
-  ./configure  --prefix=${OUTDIR} --static -64
+  if [ "${ARCH}" == "aarch64" ]; then
+    ./configure  --prefix=${OUTDIR} --static
+  else
+    ./configure  --prefix=${OUTDIR} --static -64
+  fi
   make
   make install
 
   echo ">>> ZLIB complete"
-  cd ${BUILDDIR}/build/openssl-x86_64
+  cd ${BUILDDIR}/build/openssl-${ARCH}
   ./config enable-static-engine enable-ec_nistp_64_gcc_128 enable-gost enable-idea enable-md2 enable-rc2 enable-rc5 enable-rfc3779 enable-ssl-trace enable-ssl2 enable-ssl3 enable-zlib experimental-jpake --prefix=${OUTDIR} --openssldir=${OUTDIR}/ssl -I${OUTDIR}/include -L${OUTDIR}/lib --with-zlib-lib=${OUTDIR}/lib --with-zlib-include=${OUTDIR}/include
 fi
 
@@ -92,9 +97,9 @@ fi
 
 cd ${BUILDDIR}/build
 tar -zxvf ${BUILDDIR}/downloads/libevent-${LIBEVENT_VERSION}.tar.gz
-mv libevent-${LIBEVENT_VERSION} libevent-x86_64
+mv libevent-${LIBEVENT_VERSION} libevent-${ARCH}
 
-cd libevent-x86_64
+cd libevent-${ARCH}
 ./autogen.sh
 
 if [ "${OS}" == "Darwin" ]; then
@@ -129,7 +134,14 @@ cd gnutls-3.6.10
 if [ "${OS}" == "Darwin" ]; then
   ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm  --without-idn --disable-tests --disable-doc --disable-full-test-suite  --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig LDFLAGS="-L${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include -arch x86_64" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include -arch x86_64 "  HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed"
 else
-  ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm --without-idn --disable-tests --disable-doc --disable-full-test-suite --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR LDFLAGS="-L${OUTDIR}/lib64" NETTLE_CFLAGS="-I${OUTDIR}/include" NETTLE_LIBS="-L${OUTDIR}/lib64 -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include" HOGWEED_LIBS="-L${OUTDIR}/lib64 -lhogweed" LIBS="${OUTDIR}/lib64/libhogweed.a ${OUTDIR}/lib64/libnettle.a"
+  if [ "${ARCH}" == "aarch64" ]; then
+    ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm --without-idn --disable-tests --disable-doc --disable-full-test-suite --disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR LDFLAGS="-L${OUTDIR}/lib" NETTLE_CFLAGS="-I${OUTDIR}/include" NETTLE_LIBS="-L${OUTDIR}/lib -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include" HOGWEED_LIBS="-L${OUTDIR}/lib -lhogweed" LIBS="${OUTDIR}/lib/libhogweed.a ${OUTDIR}/lib/libnettle.a"
+  else
+    ./configure --enable-static --disable-openssl-compatibility --disable-libdane --without-p11-kit --without-tpm --without-idn --disable-tests --disable-doc --disable-full-test-suite
+--disable-libdane --disable-nls --enable-shared=no --with-included-libtasn1 --with-included-unistring --with-nettle-mini --enable-guile=no --prefix=$OUTDIR LDFLAGS="-L${OUTDIR}/lib64"
+ NETTLE_CFLAGS="-I${OUTDIR}/include" NETTLE_LIBS="-L${OUTDIR}/lib64 -lnettle" HOGWEED_CFLAGS="-I${OUTDIR}/include" HOGWEED_LIBS="-L${OUTDIR}/lib64 -lhogweed" LIBS="${OUTDIR}/lib64/lib
+hogweed.a ${OUTDIR}/lib64/libnettle.a"
+  fi
 fi
 
 make && make install prefix=${OUTDIR}
