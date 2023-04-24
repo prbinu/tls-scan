@@ -862,10 +862,8 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
     if (tls_cert->x509[i].issuer) {
       BIO_get_mem_ptr(tls_cert->x509[i].issuer, &bptr);
 
-      if (!tls_cert->verify_cert) {
-        oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
+      oblen = ts_json_escape(bptr->data, bptr->length, &outbuffer[0],
 		                                             outbuffer_length);
-      }
 
       fprintf(fp, "%.*s\"issuer\": \"%.*s\",%c", FMT_INDENT(4),
                                            (int)oblen, outbuffer, fmt);
