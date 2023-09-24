@@ -1651,7 +1651,7 @@ int main(int argc, char **argv)
       strcpy(op.ciphers, old_ciphers);
       break;
     case 'v':
-      printf("tls-scan %s %s %s\n", TS_VERSION, TS_OS, TS_BUILD_DATE);
+      printf("tls-scan %s %s %s %s\n", TS_VERSION, TS_OS, TS_ARCH, TS_BUILD_DATE);
       printf("Built with OpenSSL-%lx GnuTLS-%x\n",
                                OPENSSL_VERSION_NUMBER, GNUTLS_VERSION_NUMBER);
       exit(EXIT_SUCCESS);
