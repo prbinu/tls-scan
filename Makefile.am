@@ -10,13 +10,13 @@ AM_CPPFLAGS = -I$(top_srcdir)/include -I build-root/include -I build-root/includ
 
 if LINUX
 
-if [ "${TS_ARCH}" == "x86_64" ]; then
+ifeq ($(TS_ARCH),x86_64)
 LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libevent.a build-root/lib/libevent_openssl.a build-root/lib/libgnutls.a build-root/lib64/libhogweed.a build-root/lib64/libnettle.a build-root/lib/libz.a -ldl -lrt
 else
 LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libevent.a build-root/lib/libevent_openssl.a build-root/lib/libgnutls.a build-root/lib/libhogweed.a build-root/lib/libnettle.a build-root/lib/libz.a -ldl -lrt
 endif
-
 endif
+
 if DARWIN
 LDADD =  build-root/lib/libssl.a build-root/lib/libcrypto.a build-root/lib/libevent.a build-root/lib/libevent_openssl.a build-root/lib/libgnutls.a build-root/lib/libhogweed.a build-root/lib/libnettle.a -ldl
 AM_LDFLAGS = -lz -framework Security -framework CoreFoundation
