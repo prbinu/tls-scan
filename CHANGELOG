@@ -1,6 +1,13 @@
 tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 
+Version 1.5.2 (2023-09-24)
++-----------------------------------
+* Build bug fix: https://github.com/prbinu/tls-scan/issues/59
+* Updated gzip and libevent package versions
+* Add build-from-source support for Linux ARM architecture
+* Tag: https://github.com/prbinu/tls-scan/releases/tag/1.5.2
+
 Version 1.5.1 (2023-04-23)
 +-----------------------------------
 * Critial bug fix: https://github.com/prbinu/tls-scan/issues/54

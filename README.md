@@ -28,13 +28,13 @@ This tool is primarily for collecting TLS cipher and X.509 certificate data. The
 
 You may either use pre-built binary package or build from the source.
 
-### Pre-built Binary
+### Pre-built Binary (x86_64)
 
 Linux and OSX: [https://github.com/prbinu/tls-scan/releases/latest](https://github.com/prbinu/tls-scan/releases/latest)
 
 ### Build From Source
 
-All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh). This script pulls dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
+All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/master/build-x86-64.sh) (or `build-arm64.sh` for Linux Arm arch). This script pulls dependent packages - PeterMosmans [`openssl`](https://github.com/PeterMosmans/openssl), [`libevent`](https://github.com/libevent/libevent) and [GnuTLS](https://gitlab.com/gnutls/gnutls/), and build those from the scratch. Since the openssl we use is different from stock openssl, it is linked statically to tls-scan program. The build can take approximately twenty minutes to complete.
 
 *Build Pre-requisites* :
 
@@ -43,31 +43,38 @@ All you need is [`build-x86-64.sh`](https://github.com/prbinu/tls-scan/blob/mast
 * [libtool](http://ftpmirror.gnu.org/libtool)
 * [pkg-config](https://pkg-config.freedesktop.org/releases/?C=M;O=D)
 * [gcc](http://railsapps.github.io/xcode-command-line-tools.html)
+* make
 
 On Ubuntu:
 
 ```sh
-% sudo apt-get update
-% sudo apt-get install autoconf automake libtool pkg-config gcc unzip -y
+sudo apt-get update
+sudo apt-get install make autoconf automake libtool pkg-config gcc unzip -y
 ```
 
 ### Linux
 
-*Build* :
-
 ```sh
-% git clone https://github.com/prbinu/tls-scan.git
-% cd tls-scan
-% ./build-x86-64.sh
+git clone https://github.com/prbinu/tls-scan.git
+cd tls-scan
 ```
 
+*x84_64*
+```sh
+./build-x86-64.sh
+```
 The newly built tls-scan binary can be found at `./build-root/bin`. build-x86-64.sh is a wrapper script that calls `./bootstrap.sh` to build all dependent packages. bootstrap.sh also executes the `autoreconf -i` command to generate `configure` file. Subsequently it calles the standard `./configure`, `make && make install`.
+
+*arm64*
+```sh
+./build-arm64.sh
+```
 
 *Test* :
 
 ```sh
-% cd build-root/bin
-% ./tls-scan --connect=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
+cd build-root/bin
+./tls-scan --connect=yahoo.com --cacert=../etc/tls-scan/ca-bundle.crt --pretty
 ```
 
 ### OSX
@@ -76,15 +83,17 @@ If you do not have the pre-requisite packages, you can easily install those pack
 * [xcode-command-line-tools](http://railsapps.github.io/xcode-command-line-tools.html)
 * [how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source](http://superuser.com/questions/383580/how-to-install-autoconf-automake-and-related-tools-on-mac-os-x-from-source)
 
-*Build* :
-
 ```sh
-% git clone https://github.com/prbinu/tls-scan.git
-% cd tls-scan
-% ./build-x86-64.sh
+git clone https://github.com/prbinu/tls-scan.git
+cd tls-scan
+./build-x86-64.sh
 ```
 
 The tls-scan binary can be found at `./build-root/bin`. Another (easy) option is to use our Docker image to build and run `tls-scan` on OSX.
+
+**Running `tls-scan` on Mac Apple Silicon (Arm/M1/M2)**:
+
+Currently no native build support, however you may run `tls-scan` binary using [Rosetta2](https://support.apple.com/en-us/HT211861)
 
 ### Docker
 
@@ -94,19 +103,19 @@ The tls-scan binary can be found at `./build-root/bin`. Another (easy) option is
 Copy the [Dockerfile](https://github.com/prbinu/tls-scan/blob/master/Dockerfile) to your machine, and run it:
 
 ```sh
-% docker build -t tls-scan .
+docker build -t tls-scan .
 ```
 
 *Test* :
 
 ```sh
-% docker run --rm tls-scan --connect=example.com:443 --all --pretty
+docker run --rm tls-scan --connect=example.com:443 --all --pretty
 ```
 
 ## Example
 
 ```sh
-% ./tls-scan -c search.yahoo.com --all --pretty
+./tls-scan -c search.yahoo.com --all --pretty
 ```
 
 ```json
@@ -267,3 +276,4 @@ To support old, insecure cipher scans, we are using an old openssl version that 
 
 ## Contributions
 Collaborators and pull requests are welcome!
+
