@@ -112,6 +112,24 @@ void global_init()
 /* returns current scan type/state */
 scan_type_t ts_scan_type(const client_t *cli);
 
+size_t alpn_wireformat(const char* alpn_str, unsigned char alpn[])
+{
+  char *c = NULL;
+  char *c2 = strdup(alpn_str);
+  char *tptr = c2;
+  int index = 0;
+  size_t len = 0;
+  while ((c = strtok_r(tptr, ", ", &tptr))) {
+    len = strlen(c);
+    alpn[index++] = (unsigned char)len;
+    memcpy(&alpn[index], c, len);
+    index = index + len;
+  }
+
+  alpn[index+1] = 0;
+  free(c2);
+  return index;
+}
 // https://www.openssl.org/docs/man1.1.1/man3/SSL_CTX_set_ciphersuites.html
 // seperate given ciphers into to TLS1.3 and pre-TLS1.3 cipher group
 void get_ciphersuites_and_cipher_list(const char *ciphers,
@@ -288,6 +306,11 @@ SSL *ts_ssl_create(SSL_CTX *ssl_ctx, client_t *cli)
       SSL_set_tlsext_host_name(ssl, cli->op->sni);
     } else if (cli->host[0] != 0) {
       SSL_set_tlsext_host_name(ssl, cli->host);
+    }
+
+    // Set ALPN protocol ids
+    if (cli->op->alpn_size != 0) {
+      SSL_set_alpn_protos(ssl, cli->op->alpn, cli->op->alpn_size);
     }
   }
 
@@ -1375,6 +1398,8 @@ void print_usage()
   printf("  %s\n", "-T  --session-file=<file>");
   printf("  %s\n", "                         Pass file that contains SSL session in PEM format");
   printf("  %s\n", "-a  --all                Enable --version-enum and --cipher-enum");
+  printf("  %s\n", "-A  --alpn=<proto-list>  Comma separated ALPN protocol id list passed in ClientHello");
+  printf("  %s\n", "                         Example: -A \"spdy/3,h2,http/1.1\"");
   printf("  %s\n", "-s  --sni=<host>         Set TLS extension servername in ClientHello");
   printf("  %s\n", "                         Defaults to input hostname & Applied to TLSv1+ only");
   printf("  %s\n", "-b  --concurrency=<number>");
@@ -1452,6 +1477,7 @@ int main(int argc, char **argv)
     {"session-print", no_argument, 0, 'u'},
     {"session-file", required_argument, 0, 'T'},
     {"all", no_argument, 0, 'a'},
+    {"alpn", required_argument, 0, 'A'},
     {"sni", required_argument, 0, 's'},
     {"ssl2", no_argument, 0, '2'},
     {"ssl3", no_argument, 0, '3'},
@@ -1509,12 +1535,12 @@ int main(int argc, char **argv)
   op.tls1_1 = false;
   op.tls1_2 = false;
   op.protocol_adapter_index = -1;
-
+  char alpn[DEFAULT_ALPNLEN];
   int tmsec = 0;
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:as:b:vt:S:o:N:R:123456Q789VXnOjMH",
+                            "P:h:p:c:C:eUruT:aA:s:b:vt:S:o:N:R:123456Q789VXnOjMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
@@ -1562,6 +1588,9 @@ int main(int argc, char **argv)
       op.cipher_enum = true;
       op.tls_vers_enum = true;
       //op.session_reuse_test = true;
+      break;
+    case 'A':
+      snprintf(alpn, DEFAULT_ALPNLEN, "%s", optarg);
       break;
     case 's':
       snprintf(op.sni, DEFAULT_HOSTLEN, "%s", optarg);
@@ -1712,6 +1741,10 @@ int main(int argc, char **argv)
   if (strlen(op.session_infile) > 0) {
     op.session_in_fp = fopen(op.session_infile, "r");
     assert(in_handle.fp != NULL);
+  }
+
+  if (strlen(alpn) > 0) {
+    op.alpn_size = alpn_wireformat(alpn, &op.alpn[0]);
   }
 
   signal(SIGPIPE, SIG_IGN);

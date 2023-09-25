@@ -13,6 +13,7 @@ A program to scan TLS based servers and collect X.509 certificates, ciphers and 
 * TLS and StartTLS protocol support: SMTP, IMAP, POP3, FTPS, SIEVE, NNTP, XMPP, LDAP, RDP, POSTGRES, MYSQL
 * Blazing fast - Can operate at scale with the ability to concurrently scan large number of servers (say scan IoT devices at scale)
 * Detect SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, TLSv1.3 versions and ciphers
+* ALPN protocol id enumeration
 * Cipher and TLS version enumeration
 * Extract X.509 certificate fields from the target server and print it in JSON format
 * Certificate and host name verification checks

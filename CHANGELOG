@@ -1,6 +1,13 @@
 tls-scan -- History of changes.
 Bug numbers referenced in this log correspond to bug numbers at our issue tracker,
 
+Version 1.6.0 (2023-09-25)
++-----------------------------------
+* New feature: ALPN protocol id enumeration. A new field `alpn`
+  is added to the JSON output to indicate ALPN protocol id
+  selected by the server. Besides alpn, `sni` is also added
+  as a new field to indicate SNI value set by the client.
+
 Version 1.5.2 (2023-09-24)
 +-----------------------------------
 * Build bug fix: https://github.com/prbinu/tls-scan/issues/59

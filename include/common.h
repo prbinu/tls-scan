@@ -18,6 +18,7 @@
 #include <gnutls/gnutls.h>
 
 #define DEFAULT_HOSTLEN 256
+#define DEFAULT_ALPNLEN 2048
 #define OPT_STRLEN 256
 #define OPT_CIPHER_STRLEN 4092
 #define OPT_CIPHERSUITES_STRLEN 512
@@ -89,6 +90,8 @@ typedef struct options {
   bool tls1_2;
   bool tls1_3;
   char cacert[OPT_STRLEN];
+  unsigned char alpn[DEFAULT_ALPNLEN];
+  size_t alpn_size;
   char sni[DEFAULT_HOSTLEN];
   char ciphers[OPT_CIPHER_STRLEN];
   bool cipher_user_input; // user provided cipher flag

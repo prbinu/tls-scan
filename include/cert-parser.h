@@ -62,6 +62,8 @@ struct tls_cert {
   char ip[OPT_STRLEN];
   uint16_t port;
   char cipher[128];
+  char sni[256];
+  char alpn[256];
   char tls_version[8];
   bool secure_renego;
   char compression[32];

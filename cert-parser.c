@@ -346,6 +346,21 @@ void ts_tls_cert_parse(SSL *ssl, struct tls_cert *tls_cert,
     EVP_PKEY_free(key);
   }
 
+  tls_cert->sni[0] = 0;
+  const char *sni = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+  if (sni != NULL) {
+    strcpy(tls_cert->sni, sni);
+  }
+
+  const unsigned char *data = NULL;
+  unsigned int len = 0;
+  SSL_get0_alpn_selected(ssl, &data, &len);
+  tls_cert->alpn[0] = 0;
+  if (len > 0) {
+    strncpy(tls_cert->alpn, (char*)data, len);
+    tls_cert->alpn[len] = 0;
+  }
+
   tls_cert->secure_renego =
                       SSL_get_secure_renegotiation_support(ssl) ? true : false;
 
@@ -660,6 +675,15 @@ void ts_tls_print_json(struct tls_cert *tls_cert, FILE *fp, bool pretty)
 
   fprintf(fp, "%.*s\"port\": %d,%c", FMT_INDENT(2), tls_cert->port, fmt);
   fprintf(fp, "%.*s\"elapsedTime\": %d,%c", FMT_INDENT(2), tls_cert->elapsed_time_ms, fmt);
+  
+  if (tls_cert->sni[0] != 0) {
+    fprintf(fp, "%.*s\"sni\": \"%s\",%c", FMT_INDENT(2), tls_cert->sni, fmt);
+  }
+
+  if (tls_cert->alpn[0] != 0) {
+    fprintf(fp, "%.*s\"alpn\": \"%s\",%c", FMT_INDENT(2), tls_cert->alpn, fmt);
+  }
+
   fprintf(fp, "%.*s\"tlsVersion\": \"%s\",%c", FMT_INDENT(2),
                                                     tls_cert->tls_version, fmt);
   fprintf(fp, "%.*s\"cipher\": \"%s\",%c", FMT_INDENT(2), tls_cert->cipher, fmt);
