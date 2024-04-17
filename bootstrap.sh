@@ -45,7 +45,7 @@ export PKG_CONFIG_PATH=${OUTDIR}/lib/pkgconfig
 
 OPENSSL_VERSION="1.0.2-chacha"
 LIBEVENT_VERSION="2.1.10-stable"
-ZLIB_VERSION="zlib-1.3"
+ZLIB_VERSION="zlib-1.3.1"
 
 FILE="${BUILDDIR}/downloads/${OPENSSL_VERSION}.zip"
 if [ ! -f $FILE ]; then
