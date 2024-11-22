@@ -1540,7 +1540,7 @@ int main(int argc, char **argv)
   int tsec = 0;
   while ((opt = getopt_long(argc,
                             argv,
-                            "P:h:p:c:C:eUruT:aA:s:b:vt:S:o:N:R:123456Q789VXnOjMH",
+                            "P:h:p:c:C:eUruT:aA:s:b:vt:S:o:N:R:f:123456Q789VXnOjMH",
                             long_options, &long_index)) != -1) {
     valid = 1;
     switch (opt) {
